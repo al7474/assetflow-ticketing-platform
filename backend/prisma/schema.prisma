@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int      @id @default(autoincrement())
+  name  String
+  email String   @unique
+  role  String   @default("EMPLOYEE") // ADMIN or EMPLOYEE
+  tickets Ticket[]
+}
+
+model Asset {
+  id           Int      @id @default(autoincrement())
+  name         String   // E.g: Dell XPS Laptop
+  serialNumber String   @unique
+  type         String   // E.g: Laptop, Phone, Tablet
+  status       String   @default("OPERATIONAL") // OPERATIONAL, REPAIR, LOST
+  tickets      Ticket[]
+}
+
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  description String
+  status      String   @default("OPEN") // OPEN, CLOSED
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  assetId     Int
+  asset       Asset    @relation(fields: [assetId], references: [id])
+}
