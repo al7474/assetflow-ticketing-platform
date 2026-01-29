@@ -10,11 +10,20 @@ function App() {
   const [showModal, setShowModal] = useState(false)
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [viewMode, setViewMode] = useState('assets') // 'assets' or 'admin'
+  const [tickets, setTickets] = useState([])
+  const [loadingTickets, setLoadingTickets] = useState(false)
 
   // Fetch assets from API
   useEffect(() => {
     fetchAssets()
   }, [])
+
+  useEffect(() => {
+    if (viewMode === 'admin') {
+      fetchTickets()
+    }
+  }, [viewMode])
 
   const fetchAssets = async () => {
     try {
@@ -27,6 +36,34 @@ function App() {
       console.error('Error fetching assets:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchTickets = async () => {
+    try {
+      setLoadingTickets(true)
+      const response = await apiClient.get('/tickets')
+      setTickets(response.data)
+    } catch (err) {
+      console.error('Error fetching tickets:', err)
+      alert('Failed to load tickets')
+    } finally {
+      setLoadingTickets(false)
+    }
+  }
+
+  const handleCloseTicket = async (ticketId) => {
+    if (!confirm('Are you sure you want to close this ticket?')) {
+      return
+    }
+
+    try {
+      await apiClient.patch(`/tickets/${ticketId}/close`)
+      alert('Ticket closed successfully!')
+      fetchTickets() // Refresh the list
+    } catch (err) {
+      console.error('Error closing ticket:', err)
+      alert('Failed to close ticket')
     }
   }
 
@@ -71,89 +108,171 @@ function App() {
   }
 
   if (loading) {
-    return <div className="container"><p>Loading assets...</p></div>
+    return <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"><p className="text-white text-xl">Loading assets...</p></div>
   }
 
   if (error) {
     return (
-      <div className="container">
-        <p className="error">{error}</p>
-        <button onClick={fetchAssets}>Retry</button>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-8">
+        <div className="bg-white rounded-lg p-6 text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button onClick={fetchAssets} className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">Retry</button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="container">
-      <h1>🖥️ AssetFlow - IT Asset Management</h1>
-      <p className="subtitle">Report equipment failures and track repairs</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-2">🖥️ AssetFlow - IT Asset Management</h1>
+        <p className="text-white/90 text-center mb-8 text-lg">Report equipment failures and track repairs</p>
 
-      <div className="assets-grid">
-        {assets.map((asset) => (
-          <div key={asset.id} className="asset-card">
-            <h3>{asset.name}</h3>
-            <p className="asset-info">
-              <strong>Serial:</strong> {asset.serialNumber}
-            </p>
-            <p className="asset-info">
-              <strong>Type:</strong> {asset.type}
-            </p>
-            <p className={`asset-status status-${asset.status.toLowerCase()}`}>
-              {asset.status}
-            </p>
-            <button 
-              className="report-btn"
-              onClick={() => handleReportClick(asset)}
-            >
-              📋 Report Failure
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Report Failure</h2>
-            <p className="modal-subtitle">
-              <strong>Equipment:</strong> {selectedAsset.name} ({selectedAsset.serialNumber})
-            </p>
-            
-            <form onSubmit={handleSubmitReport}>
-              <div className="form-group">
-                <label htmlFor="description">Describe the issue:</label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="E.g., Screen not turning on, keyboard not working..."
-                  rows="5"
-                  required
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="modal-actions">
-                <button 
-                  type="button" 
-                  onClick={handleCloseModal}
-                  className="btn-cancel"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn-submit"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Submitting...' : 'Submit Report'}
-                </button>
-              </div>
-            </form>
-          </div>
+        {/* View Toggle */}
+        <div className="flex gap-4 justify-center mb-8">
+          <button 
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              viewMode === 'assets' 
+                ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
+                : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
+            }`}
+            onClick={() => setViewMode('assets')}
+          >
+            📦 Assets
+          </button>
+          <button 
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              viewMode === 'admin' 
+                ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
+                : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
+            }`}
+            onClick={() => setViewMode('admin')}
+          >
+            🎫 Admin: Tickets
+          </button>
         </div>
-      )}
+
+        {/* Assets View */}
+        {viewMode === 'assets' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {assets.map((asset) => (
+              <div key={asset.id} className="bg-white rounded-xl p-6 shadow-lg hover:-translate-y-1 hover:shadow-xl transition-all">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">{asset.name}</h3>
+                <p className="text-gray-600 mb-2">
+                  <strong>Serial:</strong> {asset.serialNumber}
+                </p>
+                <p className="text-gray-600 mb-3">
+                  <strong>Type:</strong> {asset.type}
+                </p>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase mb-4 ${
+                  asset.status === 'OPERATIONAL' ? 'bg-green-100 text-green-800' :
+                  asset.status === 'REPAIR' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {asset.status}
+                </span>
+                <button 
+                  className="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity mt-2"
+                  onClick={() => handleReportClick(asset)}
+                >
+                  📋 Report Failure
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Admin View */}
+        {viewMode === 'admin' && (
+          <div>
+            {loadingTickets ? (
+              <p className="text-white text-center text-xl">Loading tickets...</p>
+            ) : tickets.length === 0 ? (
+              <p className="text-center text-white text-xl py-12 bg-white/10 rounded-xl">No tickets found</p>
+            ) : (
+              <div className="space-y-6">
+                {tickets.map((ticket) => (
+                  <div key={ticket.id} className={`bg-white rounded-xl p-6 shadow-lg border-l-4 ${
+                    ticket.status === 'CLOSED' ? 'border-gray-400 opacity-70' : 'border-indigo-500'
+                  }`}>
+                    <div className="flex justify-between items-center mb-4 pb-4 border-b-2 border-gray-100">
+                      <h3 className="text-xl font-bold text-gray-800">Ticket #{ticket.id}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                        ticket.status === 'OPEN' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {ticket.status}
+                      </span>
+                    </div>
+                    
+                    <div className="text-gray-700 space-y-2">
+                      <p><strong className="text-gray-900">Equipment:</strong> {ticket.asset.name} ({ticket.asset.serialNumber})</p>
+                      <p><strong className="text-gray-900">Type:</strong> {ticket.asset.type}</p>
+                      <p><strong className="text-gray-900">Reported by:</strong> {ticket.user.name} ({ticket.user.email})</p>
+                      <p><strong className="text-gray-900">Date:</strong> {new Date(ticket.createdAt).toLocaleString()}</p>
+                      <p><strong className="text-gray-900">Description:</strong></p>
+                      <p className="bg-gray-50 p-4 rounded-lg italic text-gray-600 mt-2">{ticket.description}</p>
+                    </div>
+
+                    {ticket.status === 'OPEN' && (
+                      <button 
+                        className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                        onClick={() => handleCloseTicket(ticket.id)}
+                      >
+                        ✓ Close Ticket
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showModal && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
+            <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Report Failure</h2>
+              <p className="text-gray-600 mb-6 pb-4 border-b border-gray-200">
+                <strong>Equipment:</strong> {selectedAsset.name} ({selectedAsset.serialNumber})
+              </p>
+              
+              <form onSubmit={handleSubmitReport}>
+                <div className="mb-6">
+                  <label htmlFor="description" className="block text-gray-800 font-semibold mb-2">Describe the issue:</label>
+                  <textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="E.g., Screen not turning on, keyboard not working..."
+                    rows="5"
+                    required
+                    disabled={submitting}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none resize-vertical disabled:bg-gray-100"
+                  />
+                </div>
+
+                <div className="flex gap-4 justify-end">
+                  <button 
+                    type="button" 
+                    onClick={handleCloseModal}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={submitting}
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

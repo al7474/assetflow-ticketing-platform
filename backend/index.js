@@ -48,5 +48,51 @@ app.post('/api/tickets', async (req, res) => {
   res.json(newTicket);
 });
 
+// 3. Get all tickets (Admin view)
+app.get('/api/tickets', async (req, res) => {
+  const tickets = await prisma.ticket.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      },
+      asset: {
+        select: {
+          id: true,
+          name: true,
+          serialNumber: true,
+          type: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+  res.json(tickets);
+});
+
+// 4. Close/Resolve a ticket
+app.patch('/api/tickets/:id/close', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: parseInt(id) },
+      data: { status: 'CLOSED' },
+      include: {
+        user: true,
+        asset: true
+      }
+    });
+    res.json(updatedTicket);
+  } catch (error) {
+    res.status(404).json({ error: 'Ticket not found' });
+  }
+});
+
 const PORT = 3000;
 app.listen(PORT, () => console.log(`🚀 API ready at http://localhost:${PORT}`));
