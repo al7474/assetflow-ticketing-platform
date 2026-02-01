@@ -87,6 +87,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = user?.role === 'ADMIN';
+  const organization = user?.organization;
+  const organizationId = user?.organizationId;
 
   const value = {
     user,
@@ -95,7 +97,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAdmin,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    organization,
+    organizationId
   };
 
   return (

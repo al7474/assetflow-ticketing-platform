@@ -6,7 +6,7 @@ import Register from './components/Register'
 import './App.css'
 
 function App() {
-  const { user, loading: authLoading, logout, isAdmin } = useAuth()
+  const { user, loading: authLoading, logout, isAdmin, organization } = useAuth()
   const [showRegister, setShowRegister] = useState(false)
   const [assets, setAssets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -152,7 +152,9 @@ function App() {
         <div className="flex justify-between items-center mb-6">
           <div className="text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-2">🖥️ AssetFlow</h1>
-            <p className="text-white/90 text-lg">Welcome, {user.name} {isAdmin && '(Admin)'}</p>
+            <p className="text-white/90 text-lg">
+              {organization?.name} - {user.name} {isAdmin && '(Admin)'}
+            </p>
           </div>
           <button 
             onClick={logout}

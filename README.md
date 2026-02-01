@@ -97,11 +97,15 @@ cp .env.example .env
 # Edit .env and set JWT_SECRET to a secure random string
 ```
 
-5. Set up the database:
+5. Set up the database (DEVELOPMENT ONLY):
 ```bash
 npx prisma migrate dev
 npm run seed
 ```
+
+⚠️ **IMPORTANT**: `migrate dev` and `seed` are for **development only**. 
+In production, use `npm run migrate:deploy` (never deletes data).
+See [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for details.
 
 This will create two test users:
 - **Admin**: `admin@assetflow.com` / `admin123`
@@ -166,14 +170,40 @@ Recommended platforms:
 - **Vercel** (frontend) + **Render/Railway** (backend)
 - **Netlify** (frontend) + **Railway** (backend)
 
-### Important: Switch to PostgreSQL before deploying!
+### ⚠️ Important Pre-Deployment Steps:
 
-##  Scripts
+1. **Switch to PostgreSQL** (SQLite is for dev only)
+2. **Use production migration commands** (see below)
+3. **Set JWT_SECRET** to a secure random string
+4. **Never use `migrate dev` or `migrate reset` in production**
 
-### Backend
+### Production Deployment Commands:
+```bash
+# Apply migrations safely (does NOT delete data)
+npm run migrate:deploy
+
+# Check migration status
+npm run migrate:status
+
+# ❌ NEVER run these in production:
+# npm run migrate:dev  ← Can delete data
+# npm run seed  ← Only for first-time setup
+```
+
+See [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for complete guide.
+
+## 🔧 Scripts
+
+### Backend (Development)
 - `npm run dev` - Start development server with nodemon
 - `npm start` - Start production server
-- `npm run seed` - Populate database with test data
+- `npm run seed` - Populate database with test data (dev only)
+- `npm run migrate:dev` - Create and apply migration (dev only)
+
+### Backend (Production)
+- `npm run migrate:deploy` - Apply migrations safely (does NOT delete data)
+- `npm run migrate:status` - Check migration status
+- `npm run prisma:generate` - Generate Prisma Client
 
 ### Frontend
 - `npm run dev` - Start Vite development server
@@ -186,14 +216,16 @@ Recommended platforms:
 assetflow-ticketing-platform/
 ├── backend/
 │   ├── index.js                # Express server with auth routes
-│   ├── seed.js                 # Database seeding with test users
+│   ├── seed.js                 # Database seeding (dev only!)
 │   ├── package.json
 │   ├── middleware/
-│   │   └── auth.js             # JWT authentication middleware
+│   │   ├── auth.js             # JWT authentication middleware
+│   │   └── organization.js     # Multi-tenancy middleware
 │   ├── utils/
 │   │   └── auth.js             # Password hashing & token generation
 │   └── prisma/
-│       └── schema.prisma       # Database schema with User roles
+│       ├── schema.prisma       # Database schema with Organizations
+│       └── migrations/         # Database migrations (commit these!)
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx             # Main app with protected routes
@@ -208,6 +240,8 @@ assetflow-ticketing-platform/
 │   ├── package.json
 │   └── vite.config.js
 ├── AUTH_IMPLEMENTATION.md      # Detailed auth documentation
+├── MULTI_TENANCY.md            # Multi-tenancy guide
+├── DATABASE_MIGRATIONS.md      # ⚠️ Production migration guide
 └── README.md
 ```
 

@@ -20,7 +20,8 @@ function generateToken(user) {
     { 
       id: user.id, 
       email: user.email, 
-      role: user.role 
+      role: user.role,
+      organizationId: user.organizationId
     },
     JWT_SECRET,
     { expiresIn: '7d' } // Token expires in 7 days

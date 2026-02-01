@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('./middleware/auth');
+const { attachOrganization, requireOrganization } = require('./middleware/organization');
 const { hashPassword, comparePassword, generateToken } = require('./utils/auth');
 
 const app = express();
@@ -43,13 +44,21 @@ app.post('/api/auth/register', async (req, res) => {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
+    // For now, assign to a default organization (will be improved later)
+    // In production, this should come from invitation or signup flow
+    const defaultOrg = await prisma.organization.findFirst();
+    if (!defaultOrg) {
+      return res.status(500).json({ error: 'No organization available. Contact administrator.' });
+    }
+
     // Create user
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: role || 'EMPLOYEE' // Default to EMPLOYEE if not specified
+        role: role || 'EMPLOYEE', // Default to EMPLOYEE if not specified
+        organizationId: defaultOrg.id
       }
     });
 
@@ -82,9 +91,18 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
 
-    // Find user
+    // Find user with organization
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        }
+      }
     });
 
     if (!user) {
@@ -107,7 +125,9 @@ app.post('/api/auth/login', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        organizationId: user.organizationId,
+        organization: user.organization
       },
       token
     });
@@ -127,6 +147,14 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
         name: true,
         email: true,
         role: true,
+        organizationId: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
         createdAt: true
       }
     });
@@ -146,20 +174,25 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 
 // ==================== ASSET ROUTES ====================
 
-// 1. Get all assets (protected)
-app.get('/api/assets', authenticateToken, async (req, res) => {
-  const assets = await prisma.asset.findMany();
+// 1. Get all assets (protected, filtered by organization)
+app.get('/api/assets', authenticateToken, attachOrganization, requireOrganization, async (req, res) => {
+  const assets = await prisma.asset.findMany({
+    where: {
+      organizationId: req.organizationId
+    }
+  });
   res.json(assets);
 });
 
-// 2. Create a Ticket (WITH BUSINESS LOGIC) - protected
-app.post('/api/tickets', authenticateToken, async (req, res) => {
+// 2. Create a Ticket (WITH BUSINESS LOGIC) - protected, org-scoped
+app.post('/api/tickets', authenticateToken, attachOrganization, requireOrganization, async (req, res) => {
   const { description, assetId } = req.body;
 
-  // Business Logic: Check if there's already an open ticket for this asset
+  // Business Logic: Check if there's already an open ticket for this asset IN THIS ORG
   const existingTicket = await prisma.ticket.findFirst({
     where: {
       assetId: parseInt(assetId),
+      organizationId: req.organizationId,
       status: 'OPEN'
     }
   });
@@ -173,17 +206,21 @@ app.post('/api/tickets', authenticateToken, async (req, res) => {
   const newTicket = await prisma.ticket.create({
     data: {
       description,
-      userId: req.user.id, // Use authenticated user's ID
-      assetId: parseInt(assetId)
+      userId: req.user.id,
+      assetId: parseInt(assetId),
+      organizationId: req.organizationId
     }
   });
 
   res.json(newTicket);
 });
 
-// 3. Get all tickets (Admin view) - requires admin role
-app.get('/api/tickets', authenticateToken, requireAdmin, async (req, res) => {
+// 3. Get all tickets (Admin view) - requires admin role, org-scoped
+app.get('/api/tickets', authenticateToken, requireAdmin, attachOrganization, requireOrganization, async (req, res) => {
   const tickets = await prisma.ticket.findMany({
+    where: {
+      organizationId: req.organizationId
+    },
     include: {
       user: {
         select: {
