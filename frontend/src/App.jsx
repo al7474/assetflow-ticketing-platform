@@ -3,6 +3,7 @@ import apiClient from './api/client'
 import { useAuth } from './context/AuthContext'
 import Login from './components/Login'
 import Register from './components/Register'
+import Dashboard from './components/Dashboard'
 import './App.css'
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
   const [showModal, setShowModal] = useState(false)
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [viewMode, setViewMode] = useState('assets') // 'assets' or 'admin'
+  const [viewMode, setViewMode] = useState('dashboard') // 'dashboard', 'assets', or 'tickets'
   const [tickets, setTickets] = useState([])
   const [loadingTickets, setLoadingTickets] = useState(false)
 
@@ -27,7 +28,7 @@ function App() {
   }, [user])
 
   useEffect(() => {
-    if (user && viewMode === 'admin') {
+    if (user && viewMode === 'tickets') {
       fetchTickets()
     }
   }, [user, viewMode])
@@ -164,8 +165,20 @@ function App() {
           </button>
         </div>
 
-        {/* View Toggle - Only show admin tab if user is admin */}
+        {/* View Toggle */}
         <div className="flex gap-4 justify-center mb-8">
+          {isAdmin && (
+            <button 
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                viewMode === 'dashboard' 
+                  ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
+                  : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
+              }`}
+              onClick={() => setViewMode('dashboard')}
+            >
+              📊 Dashboard
+            </button>
+          )}
           <button 
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
               viewMode === 'assets' 
@@ -179,16 +192,21 @@ function App() {
           {isAdmin && (
             <button 
               className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                viewMode === 'admin' 
+                viewMode === 'tickets' 
                   ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
                   : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
               }`}
-              onClick={() => setViewMode('admin')}
+              onClick={() => setViewMode('tickets')}
             >
-              🎫 Admin: Tickets
+              🎫 Tickets
             </button>
           )}
         </div>
+
+        {/* Dashboard View (Admin Only) */}
+        {viewMode === 'dashboard' && isAdmin && (
+          <Dashboard />
+        )}
 
         {/* Assets View */}
         {viewMode === 'assets' && (
@@ -220,8 +238,8 @@ function App() {
           </div>
         )}
 
-        {/* Admin View */}
-        {viewMode === 'admin' && (
+        {/* Tickets View (Admin Only) */}
+        {viewMode === 'tickets' && isAdmin && (
           <div>
             {loadingTickets ? (
               <p className="text-white text-center text-xl">Loading tickets...</p>

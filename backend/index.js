@@ -264,5 +264,87 @@ app.patch('/api/tickets/:id/close', authenticateToken, requireAdmin, async (req,
   }
 });
 
+// ==================== ANALYTICS ROUTES ====================
+
+// Get dashboard analytics (Admin only)
+app.get('/api/analytics/dashboard', authenticateToken, requireAdmin, attachOrganization, requireOrganization, async (req, res) => {
+  try {
+    const orgId = req.organizationId;
+
+    // Total tickets by status
+    const totalTickets = await prisma.ticket.count({ where: { organizationId: orgId } });
+    const openTickets = await prisma.ticket.count({ where: { organizationId: orgId, status: 'OPEN' } });
+    const closedTickets = await prisma.ticket.count({ where: { organizationId: orgId, status: 'CLOSED' } });
+
+    // Tickets by asset
+    const ticketsByAsset = await prisma.ticket.groupBy({
+      by: ['assetId'],
+      where: { organizationId: orgId },
+      _count: { id: true }
+    });
+
+    // Get asset names for the grouped data
+    const assetIds = ticketsByAsset.map(t => t.assetId);
+    const assets = await prisma.asset.findMany({
+      where: { id: { in: assetIds } },
+      select: { id: true, name: true }
+    });
+
+    const ticketsByAssetWithNames = ticketsByAsset.map(item => ({
+      assetName: assets.find(a => a.id === item.assetId)?.name || 'Unknown',
+      count: item._count.id
+    }));
+
+    // Recent tickets timeline (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentTickets = await prisma.ticket.findMany({
+      where: {
+        organizationId: orgId,
+        createdAt: { gte: sevenDaysAgo }
+      },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        createdAt: true,
+        status: true
+      }
+    });
+
+    // Group by date
+    const ticketsByDate = {};
+    recentTickets.forEach(ticket => {
+      const date = ticket.createdAt.toISOString().split('T')[0];
+      if (!ticketsByDate[date]) {
+        ticketsByDate[date] = { date, open: 0, closed: 0 };
+      }
+      if (ticket.status === 'OPEN') {
+        ticketsByDate[date].open++;
+      } else {
+        ticketsByDate[date].closed++;
+      }
+    });
+
+    const timeline = Object.values(ticketsByDate);
+
+    // Total assets
+    const totalAssets = await prisma.asset.count({ where: { organizationId: orgId } });
+
+    res.json({
+      summary: {
+        totalTickets,
+        openTickets,
+        closedTickets,
+        totalAssets
+      },
+      ticketsByAsset: ticketsByAssetWithNames,
+      timeline
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
 const PORT = 3000;
 app.listen(PORT, () => console.log(`🚀 API ready at http://localhost:${PORT}`));
