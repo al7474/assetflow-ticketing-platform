@@ -1,6 +1,6 @@
 # AssetFlow Ticketing Platform
 
-Full-stack ticketing system for asset failure management built with React, Node.js, Express, and Prisma.
+Full-stack SaaS ticketing system for asset failure management with **JWT Authentication & Role-Based Access Control (RBAC)**.
 
 ## 🚀 Tech Stack
 
@@ -9,12 +9,25 @@ Full-stack ticketing system for asset failure management built with React, Node.
 - Vite 7.2.4
 - Tailwind CSS 4.1.18
 - Axios
+- Context API for state management
 
 ### Backend
 - Node.js 20.x
 - Express 5.2.1
 - Prisma 6.19.2
+- **JWT Authentication** (jsonwebtoken)
+- **bcrypt** for password hashing
 - SQLite (development) / **PostgreSQL (production)**
+
+## ✨ Features
+
+- 🔐 **JWT Authentication** - Secure login/register system
+- 👥 **Role-Based Access Control** - ADMIN and EMPLOYEE roles
+- 📦 **Asset Management** - View and track company assets
+- 🎫 **Ticket System** - Report and manage asset failures
+- 🛡️ **Protected API Routes** - Middleware authentication
+- 📊 **Admin Dashboard** - Manage tickets (admin only)
+- 🎨 **Responsive UI** - Tailwind CSS with modern design
 
 ## 📊 Database
 
@@ -77,12 +90,22 @@ cd ../frontend
 npm install
 ```
 
-4. Set up the database:
+4. Set up environment variables:
 ```bash
-cd ../backend
+cd backend
+cp .env.example .env
+# Edit .env and set JWT_SECRET to a secure random string
+```
+
+5. Set up the database:
+```bash
 npx prisma migrate dev
 npm run seed
 ```
+
+This will create two test users:
+- **Admin**: `admin@assetflow.com` / `admin123`
+- **Employee**: `employee@assetflow.com` / `employee123`
 
 ### Development
 
@@ -102,13 +125,39 @@ npm run dev
 # App runs on http://localhost:5173
 ```
 
-## 📋 Features
+## 🎯 Usage
 
-- **Asset Management**: View available assets with status indicators
-- **Ticket Creation**: Report asset failures with detailed descriptions
-- **Admin Dashboard**: Manage and close tickets
-- **Duplicate Prevention**: Prevents multiple open tickets for the same asset
-- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
+1. Open http://localhost:5173
+2. Register a new account or use test credentials:
+   - **Admin**: `admin@assetflow.com` / `admin123` (can view admin dashboard)
+   - **Employee**: `employee@assetflow.com` / `employee123` (standard user)
+3. Browse assets and report failures
+4. Admins can switch to "Admin: Tickets" view to manage and close tickets
+
+## 🔐 Authentication Flow
+
+1. User registers or logs in → JWT token generated
+2. Token stored in localStorage
+3. Axios automatically includes token in all API requests
+4. Backend middleware validates token and checks role
+5. Access granted based on permissions
+
+**Role Permissions:**
+- **EMPLOYEE**: Can view assets and create tickets
+- **ADMIN**: All employee permissions + view/close all tickets
+
+## 📝 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login (returns JWT token)
+- `GET /api/auth/me` - Get current user info (protected)
+
+### Assets & Tickets
+- `GET /api/assets` - List all assets (protected)
+- `POST /api/tickets` - Create a new ticket (protected)
+- `GET /api/tickets` - List all tickets (admin only)
+- `PATCH /api/tickets/:id/close` - Close a ticket (admin only)
 
 ## 🚢 Deployment
 
@@ -119,20 +168,7 @@ Recommended platforms:
 
 ### Important: Switch to PostgreSQL before deploying!
 
-## 📝 API Endpoints
-
-- `GET /api/assets` - List all assets
-- `POST /api/tickets` - Create a new ticket
-- `GET /api/tickets` - List all tickets (with user and asset details)
-- `PATCH /api/tickets/:id/close` - Close a ticket
-
-## 👤 Default Test User
-
-After running the seed script:
-- Email: `admin@assetflow.com`
-- Role: `ADMIN`
-
-## 🔧 Scripts
+##  Scripts
 
 ### Backend
 - `npm run dev` - Start development server with nodemon
@@ -149,21 +185,49 @@ After running the seed script:
 ```
 assetflow-ticketing-platform/
 ├── backend/
-│   ├── index.js           # Express server
-│   ├── seed.js            # Database seeding
+│   ├── index.js                # Express server with auth routes
+│   ├── seed.js                 # Database seeding with test users
 │   ├── package.json
+│   ├── middleware/
+│   │   └── auth.js             # JWT authentication middleware
+│   ├── utils/
+│   │   └── auth.js             # Password hashing & token generation
 │   └── prisma/
-│       └── schema.prisma  # Database schema
+│       └── schema.prisma       # Database schema with User roles
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx        # Main component
-│   │   ├── api/
-│   │   │   └── client.js  # Axios configuration
-│   │   └── main.jsx
+│   │   ├── App.jsx             # Main app with protected routes
+│   │   ├── main.jsx            # App entry with AuthProvider
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx # Authentication context
+│   │   ├── components/
+│   │   │   ├── Login.jsx       # Login form
+│   │   │   └── Register.jsx    # Registration form
+│   │   └── api/
+│   │       └── client.js       # Axios with JWT interceptor
 │   ├── package.json
 │   └── vite.config.js
+├── AUTH_IMPLEMENTATION.md      # Detailed auth documentation
 └── README.md
 ```
+
+## 🎓 Learning Highlights (for Recruiters)
+
+This project demonstrates:
+- ✅ **Full-stack SaaS architecture**
+- ✅ **JWT Authentication & Authorization**
+- ✅ **Role-Based Access Control (RBAC)**
+- ✅ **Secure password hashing with bcrypt**
+- ✅ **Protected API routes with middleware**
+- ✅ **React Context API for state management**
+- ✅ **RESTful API design**
+- ✅ **Database modeling with Prisma ORM**
+- ✅ **Modern UI with Tailwind CSS**
+- ✅ **Production-ready error handling**
+
+## 📖 Documentation
+
+- [AUTH_IMPLEMENTATION.md](AUTH_IMPLEMENTATION.md) - Complete authentication implementation guide
 
 ## 📄 License
 

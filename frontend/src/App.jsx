@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
 import apiClient from './api/client'
+import { useAuth } from './context/AuthContext'
+import Login from './components/Login'
+import Register from './components/Register'
 import './App.css'
 
 function App() {
+  const { user, loading: authLoading, logout, isAdmin } = useAuth()
+  const [showRegister, setShowRegister] = useState(false)
   const [assets, setAssets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -16,14 +21,16 @@ function App() {
 
   // Fetch assets from API
   useEffect(() => {
-    fetchAssets()
-  }, [])
+    if (user) {
+      fetchAssets()
+    }
+  }, [user])
 
   useEffect(() => {
-    if (viewMode === 'admin') {
+    if (user && viewMode === 'admin') {
       fetchTickets()
     }
-  }, [viewMode])
+  }, [user, viewMode])
 
   const fetchAssets = async () => {
     try {
@@ -91,7 +98,6 @@ function App() {
       setSubmitting(true)
       await apiClient.post('/tickets', {
         description: description.trim(),
-        userId: 1, // TODO: Replace with actual logged-in user ID
         assetId: selectedAsset.id
       })
       
@@ -105,6 +111,23 @@ function App() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+        <p className="text-white text-xl">Loading...</p>
+      </div>
+    )
+  }
+
+  // Show login/register if not authenticated
+  if (!user) {
+    if (showRegister) {
+      return <Register onSwitchToLogin={() => setShowRegister(false)} />
+    }
+    return <Login onSwitchToRegister={() => setShowRegister(true)} />
   }
 
   if (loading) {
@@ -125,10 +148,21 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-2">🖥️ AssetFlow - IT Asset Management</h1>
-        <p className="text-white/90 text-center mb-8 text-lg">Report equipment failures and track repairs</p>
+        {/* Header with user info and logout */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-white">
+            <h1 className="text-4xl md:text-5xl font-bold mb-2">🖥️ AssetFlow</h1>
+            <p className="text-white/90 text-lg">Welcome, {user.name} {isAdmin && '(Admin)'}</p>
+          </div>
+          <button 
+            onClick={logout}
+            className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition"
+          >
+            Logout
+          </button>
+        </div>
 
-        {/* View Toggle */}
+        {/* View Toggle - Only show admin tab if user is admin */}
         <div className="flex gap-4 justify-center mb-8">
           <button 
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
@@ -140,16 +174,18 @@ function App() {
           >
             📦 Assets
           </button>
-          <button 
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              viewMode === 'admin' 
-                ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
-                : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
-            }`}
-            onClick={() => setViewMode('admin')}
-          >
-            🎫 Admin: Tickets
-          </button>
+          {isAdmin && (
+            <button 
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                viewMode === 'admin' 
+                  ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
+                  : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
+              }`}
+              onClick={() => setViewMode('admin')}
+            >
+              🎫 Admin: Tickets
+            </button>
+          )}
         </div>
 
         {/* Assets View */}

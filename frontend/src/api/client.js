@@ -8,14 +8,13 @@ const apiClient = axios.create({
   timeout: 10000, // 10 seconds
 });
 
-// Request interceptor (optional - for adding auth tokens, etc.)
+// Request interceptor - adds JWT token to all requests
 apiClient.interceptors.request.use(
   (config) => {
-    // You can add authorization tokens here if needed
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {

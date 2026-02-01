@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
+const { hashPassword } = require('./utils/auth');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -21,18 +22,36 @@ async function main() {
     });
   }
 
-  // Create a test user
+  // Create test users with hashed passwords
+  const adminPassword = await hashPassword('admin123');
+  const employeePassword = await hashPassword('employee123');
+
   await prisma.user.upsert({
     where: { email: 'admin@assetflow.com' },
-    update: {},
+    update: { password: adminPassword },
     create: {
       name: 'Admin User',
       email: 'admin@assetflow.com',
+      password: adminPassword,
       role: 'ADMIN'
     }
   });
 
+  await prisma.user.upsert({
+    where: { email: 'employee@assetflow.com' },
+    update: { password: employeePassword },
+    create: {
+      name: 'John Employee',
+      email: 'employee@assetflow.com',
+      password: employeePassword,
+      role: 'EMPLOYEE'
+    }
+  });
+
   console.log('✅ Load completed.');
+  console.log('📝 Test users:');
+  console.log('   Admin: admin@assetflow.com / admin123');
+  console.log('   Employee: employee@assetflow.com / employee123');
 }
 
 main()
