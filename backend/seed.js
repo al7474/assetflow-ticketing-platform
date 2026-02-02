@@ -6,20 +6,22 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting bulk equipment load...');
 
+  // Delete existing data (careful - only for development!)
+  await prisma.ticket.deleteMany({});
+  await prisma.asset.deleteMany({});
+  await prisma.user.deleteMany({});
+  await prisma.organization.deleteMany({});
+
   // Create organizations first
-  const org1 = await prisma.organization.upsert({
-    where: { slug: 'acme-corp' },
-    update: {},
-    create: {
+  const org1 = await prisma.organization.create({
+    data: {
       name: 'Acme Corporation',
       slug: 'acme-corp'
     }
   });
 
-  const org2 = await prisma.organization.upsert({
-    where: { slug: 'tech-startup' },
-    update: {},
-    create: {
+  const org2 = await prisma.organization.create({
+    data: {
       name: 'Tech Startup Inc',
       slug: 'tech-startup'
     }
