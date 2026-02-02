@@ -27,12 +27,10 @@ CREATE TABLE "User" (
 CREATE TABLE "Asset" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "model" TEXT NOT NULL,
     "serialNumber" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'AVAILABLE',
+    "type" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'OPERATIONAL',
     "organizationId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Asset_pkey" PRIMARY KEY ("id")
 );
