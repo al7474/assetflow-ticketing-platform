@@ -4,8 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js",
-    "build": "prisma generate && prisma migrate deploy",
+    "start": "npx prisma generate && npx prisma migrate deploy && node index.js",
     "seed": "node seed.js",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
