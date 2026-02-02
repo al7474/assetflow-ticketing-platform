@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Organization" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -11,12 +11,12 @@ CREATE TABLE "Organization" (
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'EMPLOYEE',
-    "organizationId" TEXT NOT NULL,
+    "organizationId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -25,9 +25,33 @@ CREATE TABLE "User" (
 
 -- CreateTable
 CREATE TABLE "Asset" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "model" TEXT NOT NULL,
+    "serialNumber" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'AVAILABLE',
+    "organizationId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Asset_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Ticket" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+    "assetId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "organizationId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Ticket_pkey" PRIMARY KEY ("id")
+);
     "serialNumber" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'AVAILABLE',
     "organizationId" TEXT NOT NULL,
