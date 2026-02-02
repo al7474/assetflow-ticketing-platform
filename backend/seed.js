@@ -25,15 +25,15 @@ async function main() {
 
   // Assets for Acme Corporation
   const acmeAssets = [
-    { name: 'MacBook Pro 14', serialNumber: 'ACME-001', type: 'Laptop', organizationId: org1.id },
-    { name: 'Dell XPS 15', serialNumber: 'ACME-002', type: 'Laptop', organizationId: org1.id },
-    { name: 'iPhone 15 Pro', serialNumber: 'ACME-003', type: 'Phone', organizationId: org1.id },
+    { name: 'MacBook Pro 14', serialNumber: 'ACME-001', model: 'MacBook Pro', organizationId: org1.id },
+    { name: 'Dell XPS 15', serialNumber: 'ACME-002', model: 'XPS 15', organizationId: org1.id },
+    { name: 'iPhone 15 Pro', serialNumber: 'ACME-003', model: 'iPhone 15', organizationId: org1.id },
   ];
 
   // Assets for Tech Startup
   const startupAssets = [
-    { name: 'iPad Air', serialNumber: 'TECH-001', type: 'Tablet', organizationId: org2.id },
-    { name: 'Monitor LG 27"', serialNumber: 'TECH-002', type: 'Monitor', organizationId: org2.id },
+    { name: 'iPad Air', serialNumber: 'TECH-001', model: 'iPad Air', organizationId: org2.id },
+    { name: 'Monitor LG 27"', serialNumber: 'TECH-002', model: 'LG 27"', organizationId: org2.id },
   ];
 
   const allAssets = [...acmeAssets, ...startupAssets];
