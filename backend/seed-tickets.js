@@ -19,32 +19,40 @@ async function main() {
   // Create tickets for Acme Corporation
   const acmeTickets = [
     {
+      title: 'Screen Flickering',
       description: 'Laptop screen is flickering constantly',
       status: 'OPEN',
+      priority: 'HIGH',
       userId: acmeEmployee.id,
       assetId: acmeAssets[0].id,
       organizationId: acme.id,
       createdAt: new Date('2026-01-28')
     },
     {
+      title: 'Battery Issue',
       description: 'Battery not charging properly',
       status: 'CLOSED',
+      priority: 'MEDIUM',
       userId: acmeEmployee.id,
       assetId: acmeAssets[1].id,
       organizationId: acme.id,
       createdAt: new Date('2026-01-26')
     },
     {
+      title: 'Cracked Screen',
       description: 'Phone screen cracked after drop',
       status: 'OPEN',
+      priority: 'HIGH',
       userId: acmeEmployee.id,
       assetId: acmeAssets[2].id,
       organizationId: acme.id,
       createdAt: new Date('2026-01-30')
     },
     {
+      title: 'Sticky Keyboard',
       description: 'Keyboard keys are sticky',
       status: 'CLOSED',
+      priority: 'LOW',
       userId: acmeEmployee.id,
       assetId: acmeAssets[0].id,
       organizationId: acme.id,
@@ -55,16 +63,20 @@ async function main() {
   // Create tickets for Tech Startup
   const techTickets = [
     {
+      title: 'Touch Screen Issue',
       description: 'iPad touch screen not responding',
       status: 'OPEN',
+      priority: 'HIGH',
       userId: techEmployee.id,
       assetId: techAssets[0].id,
       organizationId: techStartup.id,
       createdAt: new Date('2026-01-29')
     },
     {
+      title: 'Dead Pixels',
       description: 'Monitor has dead pixels',
       status: 'OPEN',
+      priority: 'MEDIUM',
       userId: techEmployee.id,
       assetId: techAssets[1].id,
       organizationId: techStartup.id,
