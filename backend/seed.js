@@ -53,10 +53,8 @@ async function main() {
   const employeePassword = await hashPassword('employee123');
 
   // Acme Corporation users
-  await prisma.user.upsert({
-    where: { email: 'admin@acme.com' },
-    update: { password: adminPassword },
-    create: {
+  await prisma.user.create({
+    data: {
       name: 'Admin User (Acme)',
       email: 'admin@acme.com',
       password: adminPassword,
@@ -65,10 +63,8 @@ async function main() {
     }
   });
 
-  await prisma.user.upsert({
-    where: { email: 'employee@acme.com' },
-    update: { password: employeePassword },
-    create: {
+  await prisma.user.create({
+    data: {
       name: 'John Employee (Acme)',
       email: 'employee@acme.com',
       password: employeePassword,
@@ -78,10 +74,8 @@ async function main() {
   });
 
   // Tech Startup users
-  await prisma.user.upsert({
-    where: { email: 'admin@techstartup.com' },
-    update: { password: adminPassword },
-    create: {
+  await prisma.user.create({
+    data: {
       name: 'Admin User (Tech Startup)',
       email: 'admin@techstartup.com',
       password: adminPassword,
@@ -90,10 +84,8 @@ async function main() {
     }
   });
 
-  await prisma.user.upsert({
-    where: { email: 'employee@techstartup.com' },
-    update: { password: employeePassword },
-    create: {
+  await prisma.user.create({
+    data: {
       name: 'Jane Employee (Tech Startup)',
       email: 'employee@techstartup.com',
       password: employeePassword,
