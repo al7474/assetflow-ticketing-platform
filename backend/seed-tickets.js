@@ -19,6 +19,7 @@ async function main() {
   // Create tickets for Acme Corporation
   const acmeTickets = [
     {
+      title: 'Screen Flickering Issue',
       description: 'Laptop screen is flickering constantly',
       status: 'OPEN',
       userId: acmeEmployee.id,
@@ -27,6 +28,7 @@ async function main() {
       createdAt: new Date('2026-01-28')
     },
     {
+      title: 'Battery Not Charging',
       description: 'Battery not charging properly',
       status: 'CLOSED',
       userId: acmeEmployee.id,
@@ -35,6 +37,7 @@ async function main() {
       createdAt: new Date('2026-01-26')
     },
     {
+      title: 'Cracked Screen',
       description: 'Phone screen cracked after drop',
       status: 'OPEN',
       userId: acmeEmployee.id,
@@ -43,6 +46,7 @@ async function main() {
       createdAt: new Date('2026-01-30')
     },
     {
+      title: 'Sticky Keyboard',
       description: 'Keyboard keys are sticky',
       status: 'CLOSED',
       userId: acmeEmployee.id,
@@ -55,6 +59,7 @@ async function main() {
   // Create tickets for Tech Startup
   const techTickets = [
     {
+      title: 'Touch Screen Not Responding',
       description: 'iPad touch screen not responding',
       status: 'OPEN',
       userId: techEmployee.id,
@@ -63,6 +68,7 @@ async function main() {
       createdAt: new Date('2026-01-29')
     },
     {
+      title: 'Dead Pixels on Monitor',
       description: 'Monitor has dead pixels',
       status: 'OPEN',
       userId: techEmployee.id,
