@@ -6,6 +6,7 @@
     "dev": "nodemon index.js",
     "start": "npx prisma generate && npx prisma migrate deploy && node index.js",
     "seed": "node seed.js",
+    "seed:tickets": "node seed-tickets.js",
     "seed:all": "node seed.js && node seed-tickets.js",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
