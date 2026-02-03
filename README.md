@@ -17,7 +17,7 @@ Full-stack SaaS ticketing system for asset failure management with **JWT Authent
 - Prisma 6.19.2
 - **JWT Authentication** (jsonwebtoken)
 - **bcrypt** for password hashing
-- SQLite (development) / **PostgreSQL (production)**
+- **PostgreSQL** (production-ready)
 
 ## ✨ Features
 
@@ -31,32 +31,32 @@ Full-stack SaaS ticketing system for asset failure management with **JWT Authent
 
 ## 📊 Database
 
-⚠️ **Important**: This project uses **SQLite for local development** but is **designed for PostgreSQL in production**.
+✅ **Production-Ready**: This project uses **PostgreSQL** for both development and production.
 
-SQLite is not recommended for production environments due to:
-- Data persistence issues on serverless deployments
-- Lack of concurrent connection support
-- Scalability limitations
+### Database Configuration
 
-### Migrating to PostgreSQL for Production
-
-1. Update `backend/prisma/schema.prisma`:
+The project is configured with PostgreSQL in `backend/prisma/schema.prisma`:
 ```prisma
 datasource db {
-  provider = "postgresql"  // Change from "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 ```
 
-2. Install PostgreSQL client (if not already installed):
-```bash
-cd backend
-npm install @prisma/client
-```
+### Local Development Setup
 
-3. Set your PostgreSQL connection string in `.env`:
-```
-DATABASE_URL="postgresql://user:password@host:5432/database?schema=public"
+For local development, you have two options:
+
+**Option 1: Use Railway PostgreSQL (Recommended)**
+- Free tier includes PostgreSQL
+- Same environment as production
+- See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md)
+
+**Option 2: Local PostgreSQL**
+```bash
+# Install PostgreSQL locally
+# Set DATABASE_URL in backend/.env:
+DATABASE_URL="postgresql://user:password@localhost:5432/assetflow"
 ```
 
 4. Run migrations:
@@ -94,22 +94,28 @@ npm install
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env and set JWT_SECRET to a secure random string
+# Edit .env:
+# - Set JWT_SECRET to a secure random string
+# - Set DATABASE_URL to your PostgreSQL connection string
 ```
 
-5. Set up the database (DEVELOPMENT ONLY):
+5. Set up the database:
 ```bash
-npx prisma migrate dev
-npm run seed
+npx prisma migrate deploy
+npm run seed:all
 ```
 
-⚠️ **IMPORTANT**: `migrate dev` and `seed` are for **development only**. 
-In production, use `npm run migrate:deploy` (never deletes data).
-See [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for details.
+This will create:
+- 2 organizations (Acme Corp, Tech Startup)
+- 4 test users (2 per organization)
+- 5 assets
+- 6 sample tickets
 
-This will create two test users:
-- **Admin**: `admin@assetflow.com` / `admin123`
-- **Employee**: `employee@assetflow.com` / `employee123`
+**Test Users:**
+- **Acme Admin**: `admin@acme.com` / `admin123`
+- **Acme Employee**: `employee@acme.com` / `employee123`
+- **Tech Admin**: `admin@techstartup.com` / `admin123`
+- **Tech Employee**: `employee@techstartup.com` / `employee123`
 
 ### Development
 
@@ -132,11 +138,19 @@ npm run dev
 ## 🎯 Usage
 
 1. Open http://localhost:5173
-2. Register a new account or use test credentials:
-   - **Admin**: `admin@assetflow.com` / `admin123` (can view admin dashboard)
-   - **Employee**: `employee@assetflow.com` / `employee123` (standard user)
+2. Login with test credentials:
+   - **Acme Admin**: `admin@acme.com` / `admin123` (can view admin dashboard)
+   - **Acme Employee**: `employee@acme.com` / `employee123` (standard user)
 3. Browse assets and report failures
-4. Admins can switch to "Admin: Tickets" view to manage and close tickets
+4. Admins can access the Dashboard to view analytics and manage tickets
+
+## 🏢 Multi-Tenancy
+
+AssetFlow supports **multi-tenancy** with complete data isolation:
+- Each organization only sees their own data
+- JWT tokens include `organizationId`
+- All API queries are filtered by organization
+- See [MULTI_TENANCY.md](MULTI_TENANCY.md) for details
 
 ## 🔐 Authentication Flow
 
@@ -165,32 +179,33 @@ npm run dev
 
 ## 🚢 Deployment
 
-Recommended platforms:
-- **Railway**: Best for monorepo structure with PostgreSQL support
-- **Vercel** (frontend) + **Render/Railway** (backend)
+**✅ Currently Deployed on Railway** - See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for complete guide.
+
+Other supported platforms:
+- **Railway**: Best for monorepo + PostgreSQL (recommended)
+- **Vercel** (frontend) + **Render** (backend)
 - **Netlify** (frontend) + **Railway** (backend)
 
-### ⚠️ Important Pre-Deployment Steps:
+### Production Setup:
 
-1. **Switch to PostgreSQL** (SQLite is for dev only)
-2. **Use production migration commands** (see below)
-3. **Set JWT_SECRET** to a secure random string
-4. **Never use `migrate dev` or `migrate reset` in production**
+1. **PostgreSQL is already configured** - No changes needed
+2. **Set JWT_SECRET** to a secure random string
+3. **Set FRONTEND_URL** for CORS
+4. **Run seeds only once** on first deployment
 
 ### Production Deployment Commands:
 ```bash
-# Apply migrations safely (does NOT delete data)
-npm run migrate:deploy
+# First deployment (with initial data)
+npm run seed:all && npx prisma generate && npx prisma migrate deploy && node index.js
+
+# Subsequent deployments (normal - use this permanently)
+npx prisma generate && npx prisma migrate deploy && node index.js
 
 # Check migration status
 npm run migrate:status
-
-# ❌ NEVER run these in production:
-# npm run migrate:dev  ← Can delete data
-# npm run seed  ← Only for first-time setup
 ```
 
-See [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for complete guide.
+See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) and [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for details.
 
 ## 🔧 Scripts
 

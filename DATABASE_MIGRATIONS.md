@@ -262,14 +262,14 @@ async function setupProduction() {
 
 ## 🚦 Environment Variables
 
-### .env.development
+### .env.development (Local PostgreSQL)
 ```env
-DATABASE_URL="file:./dev.db"  # SQLite local
+DATABASE_URL="postgresql://user:password@localhost:5432/assetflow_dev"
 ```
 
-### .env.production
+### .env.production (Railway)
 ```env
-DATABASE_URL="postgresql://user:pass@host:5432/prod"  # PostgreSQL
+DATABASE_URL="postgresql://user:pass@host.railway.app:5432/railway"
 ```
 
 ### Scripts en package.json
@@ -350,7 +350,7 @@ npx prisma migrate reset
 | Comando principal | `migrate dev` | `migrate deploy` |
 | ¿Borra data? | Opcional (reset) | Nunca |
 | Seed | Sí, siempre | Solo primera vez |
-| Testing | SQLite ok | PostgreSQL |
+| Database | PostgreSQL local | PostgreSQL (Railway) |
 | Backups | No necesario | ✅ SIEMPRE |
 | Rollback | `migrate reset` | Nueva migración |
 
