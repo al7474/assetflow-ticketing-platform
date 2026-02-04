@@ -4,6 +4,8 @@ import { useAuth } from './context/AuthContext'
 import Login from './components/Login'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
+import PricingPage from './components/PricingPage'
+import BillingPage from './components/BillingPage'
 import './App.css'
 
 function App() {
@@ -16,7 +18,7 @@ function App() {
   const [showModal, setShowModal] = useState(false)
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [viewMode, setViewMode] = useState('dashboard') // 'dashboard', 'assets', or 'tickets'
+  const [viewMode, setViewMode] = useState('dashboard') // 'dashboard', 'assets', 'tickets', 'pricing', 'billing'
   const [tickets, setTickets] = useState([])
   const [loadingTickets, setLoadingTickets] = useState(false)
 
@@ -201,11 +203,41 @@ function App() {
               🎫 Tickets
             </button>
           )}
+          <button 
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              viewMode === 'pricing' 
+                ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
+                : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
+            }`}
+            onClick={() => setViewMode('pricing')}
+          >
+            💎 Pricing
+          </button>
+          <button 
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              viewMode === 'billing' 
+                ? 'bg-white border-2 border-indigo-500 text-indigo-600' 
+                : 'bg-white/90 text-gray-700 hover:bg-white hover:-translate-y-0.5'
+            }`}
+            onClick={() => setViewMode('billing')}
+          >
+            💳 Billing
+          </button>
         </div>
 
         {/* Dashboard View (Admin Only) */}
         {viewMode === 'dashboard' && isAdmin && (
           <Dashboard />
+        )}
+
+        {/* Pricing View */}
+        {viewMode === 'pricing' && (
+          <PricingPage />
+        )}
+
+        {/* Billing View */}
+        {viewMode === 'billing' && (
+          <BillingPage />
         )}
 
         {/* Assets View */}

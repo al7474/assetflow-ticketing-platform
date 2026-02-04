@@ -1,0 +1,174 @@
+import { useState } from 'react';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function PricingPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubscribe = async (tier) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const response = await axios.post(
+        `${API_URL}/api/subscription/create-checkout`,
+        { tier },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Redirect to Stripe checkout
+      window.location.href = response.data.url;
+    } catch (err) {
+      console.error('Subscription error:', err);
+      setError(err.response?.data?.error || 'Failed to start subscription');
+      setLoading(false);
+    }
+  };
+
+  const plans = [
+    {
+      tier: 'FREE',
+      name: 'Free',
+      price: '$0',
+      period: 'forever',
+      features: [
+        'Up to 5 assets',
+        'Up to 10 tickets',
+        'Up to 2 users',
+        'Basic analytics',
+        'Email support'
+      ],
+      cta: 'Current Plan',
+      disabled: true
+    },
+    {
+      tier: 'PRO',
+      name: 'Pro',
+      price: '$29',
+      period: 'per month',
+      features: [
+        'Up to 50 assets',
+        'Unlimited tickets',
+        'Up to 10 users',
+        'Advanced analytics',
+        'Priority email support',
+        'Custom branding'
+      ],
+      cta: 'Upgrade to Pro',
+      popular: true
+    },
+    {
+      tier: 'ENTERPRISE',
+      name: 'Enterprise',
+      price: '$99',
+      period: 'per month',
+      features: [
+        'Unlimited assets',
+        'Unlimited tickets',
+        'Unlimited users',
+        'Advanced analytics',
+        'Dedicated support',
+        'Custom branding',
+        'API access',
+        'SLA guarantee'
+      ],
+      cta: 'Upgrade to Enterprise'
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Choose Your Plan
+          </h1>
+          <p className="text-xl text-gray-600">
+            Select the perfect plan for your organization's needs
+          </p>
+        </div>
+
+        {error && (
+          <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 text-center">{error}</p>
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan) => (
+            <div
+              key={plan.tier}
+              className={`relative bg-white rounded-2xl shadow-lg overflow-hidden ${
+                plan.popular ? 'ring-2 ring-blue-600 transform scale-105' : ''
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute top-0 right-0 bg-blue-600 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
+                  Most Popular
+                </div>
+              )}
+
+              <div className="p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {plan.name}
+                </h3>
+
+                <div className="mb-6">
+                  <span className="text-5xl font-bold text-gray-900">
+                    {plan.price}
+                  </span>
+                  <span className="text-gray-600 ml-2">
+                    {plan.period}
+                  </span>
+                </div>
+
+                <ul className="space-y-4 mb-8">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <svg
+                        className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleSubscribe(plan.tier)}
+                  disabled={plan.disabled || loading}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+                    plan.disabled
+                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                      : plan.popular
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-800 text-white hover:bg-gray-900'
+                  } ${loading ? 'opacity-50 cursor-wait' : ''}`}
+                >
+                  {loading ? 'Processing...' : plan.cta}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default PricingPage;

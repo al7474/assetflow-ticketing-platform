@@ -4,7 +4,9 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('./middleware/auth');
 const { attachOrganization, requireOrganization } = require('./middleware/organization');
+const { checkSubscriptionLimits } = require('./middleware/subscription');
 const { hashPassword, comparePassword, generateToken } = require('./utils/auth');
+const { stripe, PLANS } = require('./config/stripe');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -203,7 +205,7 @@ app.get('/api/assets', authenticateToken, attachOrganization, requireOrganizatio
 });
 
 // 2. Create a Ticket (WITH BUSINESS LOGIC) - protected, org-scoped
-app.post('/api/tickets', authenticateToken, attachOrganization, requireOrganization, async (req, res) => {
+app.post('/api/tickets', authenticateToken, attachOrganization, requireOrganization, checkSubscriptionLimits('ticket'), async (req, res) => {
   const { description, assetId } = req.body;
 
   // Business Logic: Check if there's already an open ticket for this asset IN THIS ORG
@@ -221,8 +223,14 @@ app.post('/api/tickets', authenticateToken, attachOrganization, requireOrganizat
     });
   }
 
+  // Get asset info for title
+  const asset = await prisma.asset.findUnique({
+    where: { id: parseInt(assetId) }
+  });
+
   const newTicket = await prisma.ticket.create({
     data: {
+      title: `Issue with ${asset?.name || 'Asset'}`,
       description,
       userId: req.user.id,
       assetId: parseInt(assetId),
@@ -361,6 +369,241 @@ app.get('/api/analytics/dashboard', authenticateToken, requireAdmin, attachOrgan
   } catch (error) {
     console.error('Analytics error:', error);
     res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+// ==================== SUBSCRIPTION ROUTES ====================
+
+// Get available subscription plans
+app.get('/api/subscription/plans', (req, res) => {
+  const plans = Object.entries(PLANS).map(([tier, plan]) => ({
+    tier,
+    name: plan.name,
+    price: plan.price,
+    limits: plan.limits
+  }));
+  res.json(plans);
+});
+
+// Get current subscription status
+app.get('/api/subscription/status', authenticateToken, attachOrganization, async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        subscriptionTier: true,
+        subscriptionStatus: true,
+        currentPeriodEnd: true,
+        stripeCustomerId: true,
+        stripeSubscriptionId: true
+      }
+    });
+
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+
+    const plan = PLANS[organization.subscriptionTier] || PLANS.FREE;
+
+    // Get current usage
+    const [assetCount, ticketCount, userCount] = await Promise.all([
+      prisma.asset.count({ where: { organizationId } }),
+      prisma.ticket.count({ where: { organizationId } }),
+      prisma.user.count({ where: { organizationId } })
+    ]);
+
+    res.json({
+      tier: organization.subscriptionTier,
+      status: organization.subscriptionStatus,
+      currentPeriodEnd: organization.currentPeriodEnd,
+      plan: {
+        name: plan.name,
+        price: plan.price,
+        limits: plan.limits
+      },
+      usage: {
+        assets: assetCount,
+        tickets: ticketCount,
+        users: userCount
+      }
+    });
+  } catch (error) {
+    console.error('Subscription status error:', error);
+    res.status(500).json({ error: 'Failed to fetch subscription status' });
+  }
+});
+
+// Create Stripe checkout session
+app.post('/api/subscription/create-checkout', authenticateToken, attachOrganization, async (req, res) => {
+  try {
+    const { tier } = req.body;
+    const organizationId = req.user.organizationId;
+
+    if (!['PRO', 'ENTERPRISE'].includes(tier)) {
+      return res.status(400).json({ error: 'Invalid subscription tier' });
+    }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!organization) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+
+    const plan = PLANS[tier];
+    if (!plan.stripePriceId) {
+      return res.status(400).json({ error: 'Stripe price ID not configured for this plan' });
+    }
+
+    // Create or retrieve Stripe customer
+    let customerId = organization.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: req.user.email,
+        metadata: {
+          organizationId: organizationId.toString()
+        }
+      });
+      customerId = customer.id;
+
+      await prisma.organization.update({
+        where: { id: organizationId },
+        data: { stripeCustomerId: customerId }
+      });
+    }
+
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: plan.stripePriceId,
+          quantity: 1
+        }
+      ],
+      success_url: `${process.env.FRONTEND_URL}/billing?success=true`,
+      cancel_url: `${process.env.FRONTEND_URL}/billing?canceled=true`,
+      metadata: {
+        organizationId: organizationId.toString(),
+        tier
+      }
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// Stripe webhook handler
+app.post('/api/subscription/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const organizationId = parseInt(session.metadata.organizationId);
+        const tier = session.metadata.tier;
+
+        await prisma.organization.update({
+          where: { id: organizationId },
+          data: {
+            subscriptionTier: tier,
+            stripeSubscriptionId: session.subscription,
+            subscriptionStatus: 'active',
+            currentPeriodEnd: new Date(session.created * 1000 + 30 * 24 * 60 * 60 * 1000) // ~30 days
+          }
+        });
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const organization = await prisma.organization.findFirst({
+          where: { stripeSubscriptionId: subscription.id }
+        });
+
+        if (organization) {
+          await prisma.organization.update({
+            where: { id: organization.id },
+            data: {
+              subscriptionStatus: subscription.status,
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+            }
+          });
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        const organization = await prisma.organization.findFirst({
+          where: { stripeSubscriptionId: subscription.id }
+        });
+
+        if (organization) {
+          await prisma.organization.update({
+            where: { id: organization.id },
+            data: {
+              subscriptionTier: 'FREE',
+              subscriptionStatus: 'canceled',
+              stripeSubscriptionId: null,
+              currentPeriodEnd: null
+            }
+          });
+        }
+        break;
+      }
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook handling error:', error);
+    res.status(500).json({ error: 'Webhook handler failed' });
+  }
+});
+
+// Create Stripe billing portal session
+app.post('/api/subscription/portal', authenticateToken, attachOrganization, async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId }
+    });
+
+    if (!organization?.stripeCustomerId) {
+      return res.status(400).json({ error: 'No active subscription found' });
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: organization.stripeCustomerId,
+      return_url: `${process.env.FRONTEND_URL}/billing`
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Portal error:', error);
+    res.status(500).json({ error: 'Failed to create portal session' });
   }
 });
 
