@@ -159,17 +159,17 @@ class SubscriptionController {
   }
 
   /**
-   * Demo mode upgrade (Development only - no Stripe required)
-   * Instantly upgrades organization to selected tier
+   * Demo mode upgrade/downgrade (Development only - no Stripe required)
+   * Instantly changes organization to selected tier
    */
   async demoUpgrade(req, res) {
     try {
       const { tier } = req.body;
       const organizationId = req.user.organizationId;
 
-      if (!['PRO', 'ENTERPRISE'].includes(tier)) {
+      if (!['FREE', 'PRO', 'ENTERPRISE'].includes(tier)) {
         return res.status(400).json({ 
-          error: 'Invalid tier. Choose PRO or ENTERPRISE.' 
+          error: 'Invalid tier. Choose FREE, PRO, or ENTERPRISE.' 
         });
       }
 
@@ -178,14 +178,16 @@ class SubscriptionController {
         return res.status(404).json({ error: 'Organization not found' });
       }
 
-      // Simulate subscription period (30 days from now)
-      const currentPeriodEnd = new Date();
-      currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
+      // Simulate subscription period (30 days from now for paid plans)
+      const currentPeriodEnd = tier === 'FREE' ? null : new Date();
+      if (currentPeriodEnd) {
+        currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
+      }
 
       // Update organization directly (no Stripe involved)
       await organizationService.updateSubscription(organizationId, {
         subscriptionTier: tier,
-        subscriptionStatus: 'active',
+        subscriptionStatus: tier === 'FREE' ? 'canceled' : 'active',
         currentPeriodEnd
       });
 
@@ -200,9 +202,11 @@ class SubscriptionController {
         );
       }
 
+      const action = tier === 'FREE' ? 'downgraded' : (organization.subscriptionTier === 'FREE' ? 'upgraded' : 'changed');
+      
       res.json({
         success: true,
-        message: `Successfully upgraded to ${tier} plan (Demo Mode)`,
+        message: `Successfully ${action} to ${tier} plan (Demo Mode)`,
         tier,
         currentPeriodEnd
       });

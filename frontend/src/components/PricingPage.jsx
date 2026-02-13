@@ -32,7 +32,8 @@ function PricingPage() {
 
   const handleSubscribe = async (tier) => {
     if (tier === currentTier) {
-      return; // Already on this plan
+      alert('ℹ️ You are already on this plan');
+      return;
     }
 
     setLoading(true);
@@ -53,7 +54,8 @@ function PricingPage() {
       );
 
       // Success - refresh the page to show new plan
-      alert(`✅ Successfully upgraded to ${tier} plan!\n\n${response.data.message}`);
+      const action = tier === 'FREE' ? 'downgraded' : (currentTier === 'FREE' ? 'upgraded' : 'changed');
+      alert(`✅ Successfully ${action} to ${tier} plan!\n\n${response.data.message}`);
       await fetchCurrentPlan(); // Refresh current plan
       setLoading(false);
     } catch (err) {
@@ -113,8 +115,9 @@ function PricingPage() {
   const getButtonText = (tier) => {
     if (fetchingPlan) return 'Loading...';
     if (tier === currentTier) return '✓ Current Plan';
-    if (tier === 'FREE' && currentTier !== 'FREE') return 'Downgrade';
-    return `Upgrade to ${tier === 'PRO' ? 'Pro' : 'Enterprise'}`;
+    if (tier === 'FREE') return '⬇️ Downgrade to Free';
+    if (tier === 'PRO' && currentTier === 'ENTERPRISE') return '⬇️ Downgrade to Pro';
+    return `⬆️ Upgrade to ${tier === 'PRO' ? 'Pro' : 'Enterprise'}`;
   };
 
   const isButtonDisabled = (tier) => {

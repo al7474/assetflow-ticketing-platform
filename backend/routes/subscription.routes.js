@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const subscriptionController = require('../controllers/subscription.controller');
-const { validateCheckout } = require('../validators/subscription.validator');
+const { validateCheckout, validateDemoUpgrade } = require('../validators/subscription.validator');
 const { authenticateToken } = require('../middleware/auth');
 const { attachOrganization } = require('../middleware/organization');
 
@@ -21,6 +21,6 @@ router.post('/create-checkout', authenticateToken, attachOrganization, validateC
 router.post('/portal', authenticateToken, attachOrganization, subscriptionController.createPortal);
 
 // Development/Demo route (no Stripe required)
-router.post('/demo-upgrade', authenticateToken, attachOrganization, validateCheckout, subscriptionController.demoUpgrade);
+router.post('/demo-upgrade', authenticateToken, attachOrganization, validateDemoUpgrade, subscriptionController.demoUpgrade);
 
 module.exports = router;
