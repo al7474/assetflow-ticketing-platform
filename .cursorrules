@@ -1,0 +1,377 @@
+# AssetFlow - AI Coding Assistant Rules & Best Practices
+
+## 🌍 CRITICAL: Language Policy
+
+**ALL code, documentation, and user-facing text MUST be in English only.**
+
+- ✅ English variable names: `userName`, `createUser()`
+- ✅ English comments: `// Fetch user data`
+- ✅ English error messages: "User not found"
+- ✅ English UI labels: "Sign In", "Dashboard"
+- ✅ English documentation: README.md, CONTRIBUTING.md
+- ❌ No Spanish: `nombreUsuario`, `crearUsuario()`, "Usuario no encontrado"
+
+## 🏗️ Project Architecture
+
+### Stack
+- **Backend:** Node.js + Express + Prisma ORM + PostgreSQL
+- **Frontend:** React 19 + Vite + TailwindCSS
+- **Auth:** JWT with bcrypt
+- **Payments:** Stripe subscriptions
+- **Emails:** Resend API
+- **Deployment:** Railway (monorepo with 2 services)
+
+### Multi-Tenancy
+- **Shared Database, Shared Schema** approach
+- Every query MUST filter by `organizationId`
+- Users are isolated by organization
+- Middleware: `attachOrganization` + `requireOrganization`
+
+### Subscription System
+- 3 tiers: FREE, PRO, ENTERPRISE
+- Limits enforced via `checkSubscriptionLimits` middleware
+- Stripe webhook handles payment events
+- Email notifications for subscription changes
+
+## 📁 Project Structure
+
+```
+assetflow-ticketing-platform/
+├── backend/
+│   ├── index.js              # Main Express server
+│   ├── middleware/           # Auth, organization, subscription
+│   ├── utils/                # Auth helpers, email functions
+│   ├── config/               # Stripe configuration
+│   ├── prisma/               # Schema + migrations
+│   └── __tests__/            # Jest unit tests
+└── frontend/
+    └── src/
+        ├── components/       # React components
+        ├── context/          # AuthContext
+        └── api/              # Axios client
+```
+
+## 🔒 Security Best Practices
+
+### Authentication
+- Always use `authenticateToken` middleware for protected routes
+- Never expose JWT secrets in code
+- Hash passwords with bcrypt (10 salt rounds minimum)
+- Tokens expire in 7 days
+- Store tokens in localStorage (frontend)
+
+### Authorization
+- Use `requireAdmin` for admin-only endpoints
+- Always attach organization context: `attachOrganization`
+- Never allow cross-organization data access
+- Validate all user inputs before database queries
+
+### Data Isolation
+```javascript
+// ✅ CORRECT: Filter by organization
+const assets = await prisma.asset.findMany({
+  where: { organizationId: req.organizationId }
+});
+
+// ❌ WRONG: Global query without org filter
+const assets = await prisma.asset.findMany();
+```
+
+## 💾 Database Patterns
+
+### Prisma Conventions
+- Use transactions for multi-step operations
+- Always include error handling with try-catch
+- Use `include` for eager loading related data
+- Use `select` to limit returned fields
+- Migrations only - never use `db push` in production
+
+### Example Query Pattern
+```javascript
+try {
+  const ticket = await prisma.ticket.create({
+    data: {
+      title,
+      description,
+      userId: req.user.id,
+      assetId: parseInt(assetId),
+      organizationId: req.organizationId
+    },
+    include: {
+      user: true,
+      asset: true
+    }
+  });
+  res.json(ticket);
+} catch (error) {
+  console.error('Create ticket error:', error);
+  res.status(500).json({ error: 'Failed to create ticket' });
+}
+```
+
+## 🛡️ Error Handling Standards
+
+### Backend
+- Always wrap async operations in try-catch
+- Return descriptive error messages
+- Log errors with context: `console.error('Operation error:', error)`
+- Use appropriate HTTP status codes:
+  - 400: Bad Request (validation errors)
+  - 401: Unauthorized (missing/invalid token)
+  - 403: Forbidden (insufficient permissions, limit reached)
+  - 404: Not Found
+  - 500: Internal Server Error
+
+### Error Message Format
+```javascript
+// ✅ GOOD: Descriptive and actionable
+return res.status(403).json({
+  error: 'Limit reached',
+  message: 'Your Free plan allows up to 10 tickets. Please upgrade to add more.',
+  currentCount: 10,
+  limit: 10,
+  tier: 'FREE'
+});
+
+// ❌ BAD: Generic and unhelpful
+return res.status(500).json({ error: 'Error' });
+```
+
+## 🎨 Frontend Conventions
+
+### Component Structure
+- Functional components with hooks
+- Use AuthContext for user state
+- Axios interceptors for token injection
+- TailwindCSS for styling (no custom CSS unless necessary)
+
+### API Calls
+```javascript
+// ✅ CORRECT: Use apiClient with automatic auth
+import apiClient from '../api/client';
+
+const response = await apiClient.get('/assets');
+
+// ❌ WRONG: Manual fetch without auth handling
+const response = await fetch('http://localhost:3000/api/assets');
+```
+
+### UI/UX Patterns
+- Loading states for all async operations
+- Error messages displayed to users
+- Disabled buttons during submission
+- Confirmation dialogs for destructive actions
+- Responsive design (mobile-first)
+
+## 📬 Email Notifications
+
+### When to Send
+- User registration: Welcome email
+- Ticket creation: Notify all admins
+- Subscription changes: Confirmation email
+
+### Email Best Practices
+- Always check if `RESEND_API_KEY` is configured
+- Graceful degradation if email fails (log warning, don't crash)
+- Include actionable links in email body
+- Use professional HTML templates
+
+```javascript
+// ✅ CORRECT: Graceful degradation
+if (!process.env.RESEND_API_KEY) {
+  console.log('⚠️  RESEND_API_KEY not configured, skipping email');
+  return;
+}
+```
+
+## 💳 Stripe Integration
+
+### Webhook Handling
+- **CRITICAL:** Webhook MUST be before `express.json()`
+- Use `express.raw({ type: 'application/json' })` for webhook
+- Verify signature with `stripe.webhooks.constructEvent()`
+- Handle events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+
+### Checkout Flow
+1. Create Stripe customer (or reuse existing)
+2. Create checkout session with metadata (organizationId, tier)
+3. Redirect user to Stripe
+4. Handle webhook to update database
+5. Send confirmation email
+
+## 🧪 Testing Standards
+
+### Jest Configuration
+- Test files: `__tests__/**/*.test.js`
+- Mock external dependencies (Prisma, Stripe, Resend)
+- Test utilities in isolation
+- Aim for >80% coverage on critical paths
+
+### Test Patterns
+```javascript
+describe('Auth Utils', () => {
+  it('should hash password correctly', async () => {
+    const password = 'password123';
+    const hashed = await hashPassword(password);
+    expect(hashed).not.toBe(password);
+    expect(hashed.startsWith('$2b$')).toBe(true);
+  });
+});
+```
+
+## 📝 Code Style
+
+### JavaScript/JSX
+- Use `const` by default, `let` when reassignment needed
+- Arrow functions for callbacks
+- Async/await over Promise.then()
+- Destructuring for cleaner code
+- Template literals over string concatenation
+
+### Naming Conventions
+- **Variables:** camelCase (`userName`, `assetCount`)
+- **Functions:** camelCase (`createUser`, `fetchAssets`)
+- **Components:** PascalCase (`LoginForm`, `Dashboard`)
+- **Constants:** UPPER_SNAKE_CASE (`JWT_SECRET`, `MAX_RETRIES`)
+- **Files:** kebab-case (`user-management.js`, `auth-context.jsx`)
+
+### Comments
+- Explain "why", not "what"
+- Document complex business logic
+- JSDoc for public functions
+- No commented-out code in commits
+
+## 🚀 Deployment (Railway)
+
+### Environment Variables
+**Backend:**
+- `DATABASE_URL` - PostgreSQL connection
+- `JWT_SECRET` - Min 32 characters
+- `FRONTEND_URL` - For CORS
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRO_PRICE_ID`, `STRIPE_ENTERPRISE_PRICE_ID`
+- `RESEND_API_KEY`
+
+**Frontend:**
+- `VITE_API_URL` - Backend API URL
+
+### Build Commands
+- Backend: `prisma generate && prisma migrate deploy`
+- Frontend: `vite build`
+
+## 🔄 Git Workflow
+
+### Commit Message Format
+```
+type(scope): description
+
+Examples:
+feat(auth): add user invitation endpoint
+fix(webhook): move webhook before express.json
+docs(readme): update deployment instructions
+refactor(tickets): improve error handling
+test(auth): add password hashing tests
+```
+
+### Branch Strategy
+- `main` - Production-ready code
+- `develop` - Integration branch
+- `feature/*` - New features
+- `fix/*` - Bug fixes
+
+## 🎯 File Organization Rules
+
+### When Creating New Files
+
+**Backend:**
+- Routes: Add to `backend/index.js` (monolithic for now)
+- Middleware: `backend/middleware/{name}.js`
+- Utils: `backend/utils/{name}.js`
+- Tests: `backend/__tests__/unit/{name}.test.js`
+
+**Frontend:**
+- Components: `frontend/src/components/{Name}.jsx`
+- Context: `frontend/src/context/{Name}Context.jsx`
+- Utils: `frontend/src/utils/{name}.js`
+
+## 🚫 What NOT to Do
+
+### Backend
+- ❌ Don't use `db push` in production (use migrations)
+- ❌ Don't expose sensitive data in API responses
+- ❌ Don't allow queries without organization filtering
+- ❌ Don't forget try-catch in async functions
+- ❌ Don't use `app.use(express.json())` before Stripe webhook
+
+### Frontend
+- ❌ Don't store sensitive data in localStorage (except token)
+- ❌ Don't make API calls without error handling
+- ❌ Don't bypass apiClient for authenticated requests
+- ❌ Don't hardcode API URLs (use env variables)
+
+### General
+- ❌ Don't commit `.env` files
+- ❌ Don't use Spanish in any code or documentation
+- ❌ Don't skip input validation
+- ❌ Don't ignore TypeScript errors (if added later)
+
+## 🎨 UI Component Patterns
+
+### Button States
+```jsx
+<button
+  onClick={handleSubmit}
+  disabled={loading}
+  className={`btn ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+>
+  {loading ? 'Processing...' : 'Submit'}
+</button>
+```
+
+### Form Validation
+```jsx
+if (!description || !description.trim()) {
+  setError('Description is required');
+  return;
+}
+```
+
+### Conditional Rendering
+```jsx
+{isAdmin && (
+  <button>Admin Only Feature</button>
+)}
+```
+
+## 📊 Performance Considerations
+
+- Use pagination for large datasets
+- Implement debouncing for search inputs
+- Lazy load heavy components
+- Optimize images (use WebP when possible)
+- Minimize bundle size (tree-shaking)
+
+## 🔍 Code Review Checklist
+
+Before submitting code:
+- [ ] All text is in English
+- [ ] Error handling implemented
+- [ ] Organization filtering applied (if applicable)
+- [ ] Input validation added
+- [ ] Tests written (if applicable)
+- [ ] No console.logs (except intentional logging)
+- [ ] Environment variables used (not hardcoded)
+- [ ] CORS configured correctly
+- [ ] Responsive on mobile
+
+## 📚 Additional Resources
+
+- **Prisma Docs:** https://www.prisma.io/docs
+- **Stripe API:** https://stripe.com/docs/api
+- **React Docs:** https://react.dev
+- **TailwindCSS:** https://tailwindcss.com/docs
+- **Railway:** https://docs.railway.app
+
+---
+
+**Remember: When in doubt, prioritize security, user experience, and English language consistency.**
