@@ -7,6 +7,7 @@ This directory contains comprehensive technical documentation for the AssetFlow 
 ### Core Architecture
 - **[AUTH_IMPLEMENTATION.md](AUTH_IMPLEMENTATION.md)** - JWT authentication, security features, and role-based access control
 - **[MULTI_TENANCY.md](MULTI_TENANCY.md)** - Multi-organization data isolation and architecture
+- **[DARK_MODE.md](DARK_MODE.md)** - Dark mode implementation, customization, and best practices
 
 ### Development & Testing
 - **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Manual testing scenarios and checklist

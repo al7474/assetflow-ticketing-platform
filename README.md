@@ -28,6 +28,7 @@ Full-stack SaaS ticketing system for asset failure management with **JWT Authent
 - 🛡️ **Protected API Routes** - Middleware authentication
 - 📊 **Admin Dashboard** - Manage tickets (admin only)
 - 🎨 **Responsive UI** - Tailwind CSS with modern design
+- 🌓 **Dark Mode** - Toggle between light and dark themes with persistence
 - 💳 **Subscription System** - FREE, PRO, and ENTERPRISE plans
 - 🚀 **Demo Mode** - Test upgrades without payment gateway (development)
 - 📧 **Email Notifications** - Welcome emails, ticket alerts, subscription confirmations
@@ -323,6 +324,7 @@ This project demonstrates:
 - [Contributing Guide](CONTRIBUTING.md) - Development workflow and best practices
 - [Authentication Implementation](docs/AUTH_IMPLEMENTATION.md) - JWT and security details
 - [Multi-Tenancy Guide](docs/MULTI_TENANCY.md) - Organization isolation architecture
+- [Dark Mode Guide](docs/DARK_MODE.md) - Theme implementation and customization
 - [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md) - Production deployment steps
 - [Database Migrations](docs/DATABASE_MIGRATIONS.md) - Migration workflow guide
 - [Demo Mode Testing](docs/DEMO_MODE_TESTING.md) - Subscription testing scenarios

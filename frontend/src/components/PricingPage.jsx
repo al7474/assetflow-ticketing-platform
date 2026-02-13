@@ -125,10 +125,10 @@ function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
         {/* Demo Mode Banner */}
-        <div className="mb-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg p-4 text-center">
+        <div className="mb-8 bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 text-white rounded-lg shadow-lg p-4 text-center">
           <div className="flex items-center justify-center space-x-2">
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -141,17 +141,17 @@ function PricingPage() {
         </div>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-600 dark:text-gray-100">
             Select the perfect plan for your organization's needs
           </p>
         </div>
 
         {error && (
-          <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-center">{error}</p>
+          <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-800 dark:text-red-300 text-center">{error}</p>
           </div>
         )}
 
@@ -159,26 +159,26 @@ function PricingPage() {
           {plans.map((plan) => (
             <div
               key={plan.tier}
-              className={`relative bg-white rounded-2xl shadow-lg overflow-hidden ${
-                plan.popular ? 'ring-2 ring-blue-600 transform scale-105' : ''
+              className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all hover:shadow-xl ${
+                plan.popular ? 'ring-2 ring-blue-600 dark:ring-blue-500 transform scale-105' : ''
               }`}
             >
               {plan.popular && (
-                <div className="absolute top-0 right-0 bg-blue-600 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
+                <div className="absolute top-0 right-0 bg-blue-600 dark:bg-blue-500 text-white px-4 py-1 text-sm font-semibold rounded-bl-lg">
                   Most Popular
                 </div>
               )}
 
               <div className="p-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {plan.name}
                 </h3>
 
                 <div className="mb-6">
-                  <span className="text-5xl font-bold text-gray-900">
+                  <span className="text-5xl font-bold text-gray-900 dark:text-white">
                     {plan.price}
                   </span>
-                  <span className="text-gray-600 ml-2">
+                  <span className="text-gray-600 dark:text-gray-200 ml-2">
                     {plan.period}
                   </span>
                 </div>
@@ -187,7 +187,7 @@ function PricingPage() {
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       <svg
-                        className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0"
+                        className="w-5 h-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -197,7 +197,7 @@ function PricingPage() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span className="text-gray-700">{feature}</span>
+                      <span className="text-gray-700 dark:text-gray-100">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -207,10 +207,10 @@ function PricingPage() {
                   disabled={isButtonDisabled(plan.tier)}
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
                     plan.tier === currentTier
-                      ? 'bg-green-100 text-green-800 cursor-not-allowed border-2 border-green-500'
+                      ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 cursor-not-allowed border-2 border-green-500 dark:border-green-600'
                       : plan.popular
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-800 text-white hover:bg-gray-900'
+                      ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
+                      : 'bg-gray-800 dark:bg-gray-700 text-white hover:bg-gray-900 dark:hover:bg-gray-600'
                   } ${loading || fetchingPlan ? 'opacity-50 cursor-wait' : ''}`}
                 >
                   {getButtonText(plan.tier)}
