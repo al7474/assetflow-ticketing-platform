@@ -33,12 +33,33 @@
 - Stripe webhook handles payment events
 - Email notifications for subscription changes
 
-## 📁 Project Structure
+## 📁 Project Structure (Refactored MVC)
 
 ```
 assetflow-ticketing-platform/
 ├── backend/
-│   ├── index.js              # Main Express server
+│   ├── index.js              # Server entry point (80 lines only!)
+│   ├── routes/               # Express route definitions
+│   │   ├── auth.routes.js
+│   │   ├── asset.routes.js
+│   │   ├── ticket.routes.js
+│   │   ├── analytics.routes.js
+│   │   └── subscription.routes.js
+│   ├── controllers/          # Business logic layer
+│   │   ├── auth.controller.js
+│   │   ├── asset.controller.js
+│   │   ├── ticket.controller.js
+│   │   ├── analytics.controller.js
+│   │   └── subscription.controller.js
+│   ├── services/             # Database operations (Prisma)
+│   │   ├── auth.service.js
+│   │   ├── asset.service.js
+│   │   ├── ticket.service.js
+│   │   └── organization.service.js
+│   ├── validators/           # Input validation middleware
+│   │   ├── auth.validator.js
+│   │   ├── ticket.validator.js
+│   │   └── subscription.validator.js
 │   ├── middleware/           # Auth, organization, subscription
 │   ├── utils/                # Auth helpers, email functions
 │   ├── config/               # Stripe configuration
@@ -279,29 +300,127 @@ test(auth): add password hashing tests
 - `feature/*` - New features
 - `fix/*` - Bug fixes
 
-## 🎯 File Organization Rules
+## 🎯 File Organization Rules (MVC Architecture)
 
-### When Creating New Files
+### When Creating New Features
+
+Follow the **layered architecture** in this exact order:
+
+#### 1. **Validator** (`validators/{feature}.validator.js`)
+```javascript
+const validateInput = (req, res, next) => {
+  // Validate req.body fields
+  if (!field) return res.status(400).json({ error: 'Field required' });
+  next();
+};
+module.exports = { validateInput };
+```
+
+#### 2. **Service** (`services/{feature}.service.js`)
+```javascri Architecture
+- ❌ Don't put business logic in routes (use controllers)
+- ❌ Don't put database queries in controllers (use services)
+- ❌ Don't validate input in controllers (use validators)
+- ❌ Don't create monolithic files (separate by responsibility)
+- ❌ Don't skip the layered architecture (Route → Validator → Controller → Service)
+
+### Backend Securitypt
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+class FeatureService {
+  async create(data) {
+    return await prisma.feature.create({ data });
+  }
+}
+module.exports = new FeatureService();
+```
+
+#### 3. **Controller** (`controllers/{feature}.controller.js`)
+```javascript
+const featureService = require('../services/feature.service');
+
+class FeatureController {
+  async create(req, res) {
+    try {
+      const result = await featureService.create(req.body);
+      res.json(result);
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Failed' });
+    }
+  }
+}
+module.exports = new FeatureController();
+```
+
+#### 4. **Router** (`routes/{feature}.routes.js`)
+```javascript
+const express = require('express');
+const router = express.Router();
+const controller = require('../controllers/feature.controller');
+const validator = require('../validators/feature.validator');
+const { authenticateToken } = require('../middleware/auth');
+
+router.post('/', authenticateToken, validator.validateInput, controller.create);
+module.exports = router;
+```
+
+#### 5. **Register in index.js**
+```javascript
+const featureRoutes = require('./routes/feature.routes');
+app.use('/api/features', featureRoutes);
+```
+
+### File Naming Conventions
 
 **Backend:**
-- Routes: Add to `backend/index.js` (monolithic for now)
-- Middleware: `backend/middleware/{name}.js`
-- Utils: `backend/utils/{name}.js`
-- Tests: `backend/__tests__/unit/{name}.test.js`
+- Routes: `{module}.routes.js`
+- Controllers: `{module}.controller.js`
+- Services: `{module}.service.js`
+- Validators: `{module}.validator.js`
+- Middleware: `{name}.js` (in middleware/)
+- Utils: `{name}.js` (in utils/)
+- Tests: `{name}.test.js` (in __tests__/unit/)
 
 **Frontend:**
-- Components: `frontend/src/components/{Name}.jsx`
-- Context: `frontend/src/context/{Name}Context.jsx`
-- Utils: `frontend/src/utils/{name}.js`
+- Components: `{Name}.jsx` (PascalCase)
+- Context: `{Name}Context.jsx`
+- Utils: `{name}.js` (camelCase)
+### Project Documentation
+- **CONTRIBUTING.md** - Complete development guide and architecture overview
+- **IMPROVEMENTS.md** - Recent bug fixes and enhancements
+- **TESTING_GUIDE.md** - Testing procedures and scenarios
+- **MULTI_TENANCY.md** - Multi-organization architecture
+- **AUTH_IMPLEMENTATION.md** - JWT authentication details
+- **DATABASE_MIGRATIONS.md** - Prisma migration workflows
+- **RAILWAY_DEPLOYMENT.md** - Production deployment guide
 
-## 🚫 What NOT to Do
+### External Documentation
+- **Prisma Docs:** https://www.prisma.io/docs
+- **Stripe API:** https://stripe.com/docs/api
+- **React Docs:** https://react.dev
+- **TailwindCSS:** https://tailwindcss.com/docs
+- **Railway:** https://docs.railway.app
 
-### Backend
-- ❌ Don't use `db push` in production (use migrations)
-- ❌ Don't expose sensitive data in API responses
-- ❌ Don't allow queries without organization filtering
-- ❌ Don't forget try-catch in async functions
-- ❌ Don't use `app.use(express.json())` before Stripe webhook
+## 🏆 Architecture Benefits
+
+This refactored MVC architecture provides:
+
+✅ **Scalability** - Add features without touching existing code  
+✅ **Maintainability** - Clear separation of concerns  
+✅ **Testability** - Each layer can be tested independently  
+✅ **Readability** - Small, focused files (50-150 lines each)  
+✅ **Reusability** - Services can be used by multiple controllers  
+✅ **Debugging** - Easy to trace issues through layers  
+✅ **Team Collaboration** - Multiple devs can work without conflicts  
+
+**Before Refactoring:** 783 lines in index.js (monolithic)  
+**After Refactoring:** 80 lines in index.js + 17 modular files  
+
+---
+
+**Remember: When in doubt, prioritize security, user experience, layered architectur
 
 ### Frontend
 - ❌ Don't store sensitive data in localStorage (except token)
