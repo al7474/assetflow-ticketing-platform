@@ -88,6 +88,23 @@ class OrganizationService {
       where: { organizationId }
     });
   }
+
+  /**
+   * Get admin users from organization
+   */
+  async getAdminUsers(organizationId) {
+    return await prisma.user.findMany({
+      where: { 
+        organizationId,
+        role: 'ADMIN'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    });
+  }
 }
 
 module.exports = new OrganizationService();

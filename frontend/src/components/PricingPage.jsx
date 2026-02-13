@@ -45,17 +45,20 @@ function PricingPage() {
         return;
       }
 
+      // Use demo upgrade endpoint (no Stripe required)
       const response = await axios.post(
-        `${API_URL}/api/subscription/create-checkout`,
+        `${API_URL}/api/subscription/demo-upgrade`,
         { tier },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Redirect to Stripe checkout
-      window.location.href = response.data.url;
+      // Success - refresh the page to show new plan
+      alert(`✅ Successfully upgraded to ${tier} plan!\n\n${response.data.message}`);
+      await fetchCurrentPlan(); // Refresh current plan
+      setLoading(false);
     } catch (err) {
       console.error('Subscription error:', err);
-      setError(err.response?.data?.error || 'Failed to start subscription');
+      setError(err.response?.data?.error || 'Failed to upgrade plan');
       setLoading(false);
     }
   };
@@ -121,6 +124,19 @@ function PricingPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Demo Mode Banner */}
+        <div className="mb-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg shadow-lg p-4 text-center">
+          <div className="flex items-center justify-center space-x-2">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <span className="font-semibold text-lg">🚀 Demo Mode Active</span>
+          </div>
+          <p className="mt-2 text-sm opacity-90">
+            All features unlocked for testing • Upgrades are instant • No payment required
+          </p>
+        </div>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Choose Your Plan

@@ -159,6 +159,60 @@ class SubscriptionController {
   }
 
   /**
+   * Demo mode upgrade (Development only - no Stripe required)
+   * Instantly upgrades organization to selected tier
+   */
+  async demoUpgrade(req, res) {
+    try {
+      const { tier } = req.body;
+      const organizationId = req.user.organizationId;
+
+      if (!['PRO', 'ENTERPRISE'].includes(tier)) {
+        return res.status(400).json({ 
+          error: 'Invalid tier. Choose PRO or ENTERPRISE.' 
+        });
+      }
+
+      const organization = await organizationService.getOrganizationById(organizationId);
+      if (!organization) {
+        return res.status(404).json({ error: 'Organization not found' });
+      }
+
+      // Simulate subscription period (30 days from now)
+      const currentPeriodEnd = new Date();
+      currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
+
+      // Update organization directly (no Stripe involved)
+      await organizationService.updateSubscription(organizationId, {
+        subscriptionTier: tier,
+        subscriptionStatus: 'active',
+        currentPeriodEnd
+      });
+
+      // Send confirmation email
+      const adminUsers = await organizationService.getAdminUsers(organizationId);
+      if (adminUsers.length > 0) {
+        await sendSubscriptionEmail(
+          adminUsers[0].email,
+          adminUsers[0].name,
+          tier,
+          'active'
+        );
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully upgraded to ${tier} plan (Demo Mode)`,
+        tier,
+        currentPeriodEnd
+      });
+    } catch (error) {
+      console.error('Demo upgrade error:', error);
+      res.status(500).json({ error: 'Failed to upgrade plan' });
+    }
+  }
+
+  /**
    * Handle Stripe webhook events
    */
   async handleWebhook(req, res) {

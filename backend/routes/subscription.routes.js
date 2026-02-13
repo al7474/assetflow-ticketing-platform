@@ -20,4 +20,7 @@ router.get('/status', authenticateToken, attachOrganization, subscriptionControl
 router.post('/create-checkout', authenticateToken, attachOrganization, validateCheckout, subscriptionController.createCheckout);
 router.post('/portal', authenticateToken, attachOrganization, subscriptionController.createPortal);
 
+// Development/Demo route (no Stripe required)
+router.post('/demo-upgrade', authenticateToken, attachOrganization, validateCheckout, subscriptionController.demoUpgrade);
+
 module.exports = router;

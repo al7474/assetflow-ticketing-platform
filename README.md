@@ -28,6 +28,9 @@ Full-stack SaaS ticketing system for asset failure management with **JWT Authent
 - 🛡️ **Protected API Routes** - Middleware authentication
 - 📊 **Admin Dashboard** - Manage tickets (admin only)
 - 🎨 **Responsive UI** - Tailwind CSS with modern design
+- 💳 **Subscription System** - FREE, PRO, and ENTERPRISE plans
+- 🚀 **Demo Mode** - Test upgrades without payment gateway (development)
+- 📧 **Email Notifications** - Welcome emails, ticket alerts, subscription confirmations
 
 ## 📊 Database
 
@@ -134,6 +137,37 @@ cd frontend
 npm run dev
 # App runs on http://localhost:5173
 ```
+
+## 🚀 Demo Mode (Subscription Testing)
+
+The application includes a **Demo Mode** for testing subscription upgrades without requiring Stripe configuration.
+
+### Features:
+- ✅ **Instant Upgrades**: Switch between FREE, PRO, and ENTERPRISE plans immediately
+- ✅ **No Payment Required**: Test full subscription flow without Stripe account
+- ✅ **All Limits Enforced**: Experience tier restrictions (assets, tickets, users)
+- ✅ **Perfect for Portfolio**: Recruiters can test all features without setup
+
+### How It Works:
+1. Register or login to the application
+2. Click on **"Pricing"** in the navigation
+3. See the **"Demo Mode Active"** banner
+4. Click **"Upgrade to Pro"** or **"Upgrade to Enterprise"**
+5. Plan changes instantly - no payment flow
+
+### For Production:
+When ready to deploy with real payments, configure Stripe:
+1. Create account at https://stripe.com
+2. Create products for PRO ($29) and ENTERPRISE ($99)
+3. Add to `.env`:
+   ```
+   STRIPE_SECRET_KEY=sk_live_...
+   STRIPE_PRO_PRICE_ID=price_...
+   STRIPE_ENTERPRISE_PRICE_ID=price_...
+   ```
+4. Replace `/api/subscription/demo-upgrade` with `/api/subscription/create-checkout` in frontend
+
+**Supported Alternatives**: Stripe, PayU (Colombia), Mercado Pago (LATAM), Wompi (Colombia)
 
 ## 🎯 Usage
 
