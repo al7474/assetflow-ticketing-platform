@@ -53,7 +53,7 @@ For local development, you have two options:
 **Option 1: Use Railway PostgreSQL (Recommended)**
 - Free tier includes PostgreSQL
 - Same environment as production
-- See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md)
+- See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md)
 
 **Option 2: Local PostgreSQL**
 ```bash
@@ -184,7 +184,7 @@ AssetFlow supports **multi-tenancy** with complete data isolation:
 - Each organization only sees their own data
 - JWT tokens include `organizationId`
 - All API queries are filtered by organization
-- See [MULTI_TENANCY.md](MULTI_TENANCY.md) for details
+- See [MULTI_TENANCY.md](docs/MULTI_TENANCY.md) for details
 
 ## 🔐 Authentication Flow
 
@@ -213,7 +213,7 @@ AssetFlow supports **multi-tenancy** with complete data isolation:
 
 ## 🚢 Deployment
 
-**✅ Currently Deployed on Railway** - See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for complete guide.
+**✅ Currently Deployed on Railway** - See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for complete guide.
 
 Other supported platforms:
 - **Railway**: Best for monorepo + PostgreSQL (recommended)
@@ -239,7 +239,7 @@ npx prisma generate && npx prisma migrate deploy && node index.js
 npm run migrate:status
 ```
 
-See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) and [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for details.
+See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) and [DATABASE_MIGRATIONS.md](docs/DATABASE_MIGRATIONS.md) for details.
 
 ## 🔧 Scripts
 
@@ -264,9 +264,13 @@ See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) and [DATABASE_MIGRATIONS.md](
 ```
 assetflow-ticketing-platform/
 ├── backend/
-│   ├── index.js                # Express server with auth routes
+│   ├── index.js                # Express server entry point
 │   ├── seed.js                 # Database seeding (dev only!)
 │   ├── package.json
+│   ├── routes/                 # API route definitions
+│   ├── controllers/            # Business logic layer
+│   ├── services/               # Database operations
+│   ├── validators/             # Input validation
 │   ├── middleware/
 │   │   ├── auth.js             # JWT authentication middleware
 │   │   └── organization.js     # Multi-tenancy middleware
@@ -281,16 +285,22 @@ assetflow-ticketing-platform/
 │   │   ├── main.jsx            # App entry with AuthProvider
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx # Authentication context
-│   │   ├── components/
-│   │   │   ├── Login.jsx       # Login form
-│   │   │   └── Register.jsx    # Registration form
+│   │   ├── components/         # React components (20+ files)
 │   │   └── api/
 │   │       └── client.js       # Axios with JWT interceptor
 │   ├── package.json
 │   └── vite.config.js
-├── AUTH_IMPLEMENTATION.md      # Detailed auth documentation
-├── MULTI_TENANCY.md            # Multi-tenancy guide
-├── DATABASE_MIGRATIONS.md      # ⚠️ Production migration guide
+├── docs/                       # 📚 Project documentation
+│   ├── AUTH_IMPLEMENTATION.md
+│   ├── DATABASE_MIGRATIONS.md
+│   ├── DEMO_MODE_TESTING.md
+│   ├── IMPROVEMENTS.md
+│   ├── LANGUAGE_STANDARDIZATION.md
+│   ├── MULTI_TENANCY.md
+│   ├── RAILWAY_DEPLOYMENT.md
+│   └── TESTING_GUIDE.md
+├── .cursorrules                # AI assistant guidelines
+├── CONTRIBUTING.md             # Development guide
 └── README.md
 ```
 
@@ -310,7 +320,15 @@ This project demonstrates:
 
 ## 📖 Documentation
 
-- [AUTH_IMPLEMENTATION.md](AUTH_IMPLEMENTATION.md) - Complete authentication implementation guide
+- [Contributing Guide](CONTRIBUTING.md) - Development workflow and best practices
+- [Authentication Implementation](docs/AUTH_IMPLEMENTATION.md) - JWT and security details
+- [Multi-Tenancy Guide](docs/MULTI_TENANCY.md) - Organization isolation architecture
+- [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md) - Production deployment steps
+- [Database Migrations](docs/DATABASE_MIGRATIONS.md) - Migration workflow guide
+- [Demo Mode Testing](docs/DEMO_MODE_TESTING.md) - Subscription testing scenarios
+- [Testing Guide](docs/TESTING_GUIDE.md) - Manual testing checklist
+- [Improvements Log](docs/IMPROVEMENTS.md) - Bug fixes and enhancements
+- [Language Standardization](docs/LANGUAGE_STANDARDIZATION.md) - English-only compliance
 
 ## 📄 License
 

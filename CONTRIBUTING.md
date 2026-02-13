@@ -6,7 +6,7 @@ Welcome to AssetFlow! This document serves as your central guide to understandin
 
 ### Getting Started
 - [README.md](README.md) - Project overview and quick start guide
-- [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) - Production deployment guide
+- [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) - Production deployment guide
 
 ### Architecture & Design
 - **Backend Architecture** - MVC pattern with layered architecture:
@@ -19,14 +19,14 @@ Welcome to AssetFlow! This document serves as your central guide to understandin
   - `config/` - Configuration files (Stripe)
 
 ### Core Concepts
-- [MULTI_TENANCY.md](MULTI_TENANCY.md) - Multi-organization data isolation
-- [AUTH_IMPLEMENTATION.md](AUTH_IMPLEMENTATION.md) - JWT authentication and authorization
-- [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) - Prisma migration workflows
+- [MULTI_TENANCY.md](docs/MULTI_TENANCY.md) - Multi-organization data isolation
+- [AUTH_IMPLEMENTATION.md](docs/AUTH_IMPLEMENTATION.md) - JWT authentication and authorization
+- [DATABASE_MIGRATIONS.md](docs/DATABASE_MIGRATIONS.md) - Prisma migration workflows
 
 ### Development
-- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing scenarios and procedures
-- [IMPROVEMENTS.md](IMPROVEMENTS.md) - Recent bug fixes and improvements
-- [LANGUAGE_STANDARDIZATION.md](LANGUAGE_STANDARDIZATION.md) - English-only policy
+- [TESTING_GUIDE.md](docs/TESTING_GUIDE.md) - Testing scenarios and procedures
+- [IMPROVEMENTS.md](docs/IMPROVEMENTS.md) - Recent bug fixes and improvements
+- [LANGUAGE_STANDARDIZATION.md](docs/LANGUAGE_STANDARDIZATION.md) - English-only policy
 - [.cursorrules](.cursorrules) - AI assistant guidelines and best practices
 
 ## 🏗️ Architecture Overview
@@ -275,7 +275,7 @@ npx prisma generate
 npx prisma migrate deploy
 ```
 
-See [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for detailed guidance.
+See [DATABASE_MIGRATIONS.md](docs/DATABASE_MIGRATIONS.md) for detailed guidance.
 
 ## 🚀 Deployment
 
@@ -290,7 +290,7 @@ See [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) for detailed guidance.
 - `STRIPE_ENTERPRISE_PRICE_ID` - ENTERPRISE plan price ID
 - `RESEND_API_KEY` - Email service API key
 
-See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for complete deployment guide.
+See [RAILWAY_DEPLOYMENT.md](docs/RAILWAY_DEPLOYMENT.md) for complete deployment guide.
 
 ## 🐛 Debugging
 
@@ -336,10 +336,10 @@ npx prisma studio
 
 ## 📞 Getting Help
 
-- **Issues:** Check [IMPROVEMENTS.md](IMPROVEMENTS.md) for known issues
-- **Testing:** See [TESTING_GUIDE.md](TESTING_GUIDE.md)
-- **Multi-Tenancy:** See [MULTI_TENANCY.md](MULTI_TENANCY.md)
-- **Auth:** See [AUTH_IMPLEMENTATION.md](AUTH_IMPLEMENTATION.md)
+- **Issues:** Check [IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for known issues
+- **Testing:** See [TESTING_GUIDE.md](docs/TESTING_GUIDE.md)
+- **Multi-Tenancy:** See [MULTI_TENANCY.md](docs/MULTI_TENANCY.md)
+- **Auth:** See [AUTH_IMPLEMENTATION.md](docs/AUTH_IMPLEMENTATION.md)
 - **AI Guidelines:** See [.cursorrules](.cursorrules)
 
 ## 🎉 Recognition
