@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import apiClient from '../api/client';
 
 function BillingPage() {
   const [subscription, setSubscription] = useState(null);
@@ -21,9 +19,7 @@ function BillingPage() {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/api/subscription/status`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/subscription/status');
 
       setSubscription(response.data);
     } catch (err) {
@@ -38,10 +34,9 @@ function BillingPage() {
     setPortalLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_URL}/api/subscription/portal`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.post(
+        '/subscription/portal',
+        {}
       );
 
       window.location.href = response.data.url;

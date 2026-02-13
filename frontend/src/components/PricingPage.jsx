@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import apiClient from '../api/client';
 
 function PricingPage() {
   const [loading, setLoading] = useState(false);
@@ -18,9 +16,7 @@ function PricingPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await axios.get(`${API_URL}/api/subscription/status`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/subscription/status');
 
       setCurrentTier(response.data.tier);
     } catch (err) {
@@ -47,10 +43,9 @@ function PricingPage() {
       }
 
       // Use demo upgrade endpoint (no Stripe required)
-      const response = await axios.post(
-        `${API_URL}/api/subscription/demo-upgrade`,
-        { tier },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.post(
+        '/subscription/demo-upgrade',
+        { tier }
       );
 
       // Success - refresh the page to show new plan
