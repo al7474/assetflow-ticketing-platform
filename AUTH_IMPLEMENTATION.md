@@ -1,170 +1,248 @@
-# 🔐 Autenticación con JWT + Roles - Guía de Implementación
+# 🔐 JWT Authentication + Roles - Implementation Guide
 
-## ✅ Implementado
+## ✅ Implemented
 
 ### Backend
 
 #### 1. **Prisma Schema** ([backend/prisma/schema.prisma](backend/prisma/schema.prisma))
 ```prisma
 model User {
-  password  String   // Hashed password
-  createdAt DateTime @default(now())
+  id             Int          @id @default(autoincrement())
+  name           String
+  email          String       @unique
+  password       String       // Hashed password
+  role           String       @default("EMPLOYEE") // ADMIN or EMPLOYEE
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  tickets        Ticket[]
+  createdAt      DateTime     @default(now())
 }
 ```
 
-#### 2. **Middleware de Autenticación** ([backend/middleware/auth.js](backend/middleware/auth.js))
-- `authenticateToken`: Verifica JWT en headers
-- `requireAdmin`: Verifica rol de administrador
+#### 2. **Authentication Middleware** ([backend/middleware/auth.js](backend/middleware/auth.js))
+- `authenticateToken`: Verifies JWT in headers
+- `requireAdmin`: Verifies admin role
 
-#### 3. **Utilidades de Auth** ([backend/utils/auth.js](backend/utils/auth.js))
-- `hashPassword()`: Hashea contraseñas con bcrypt
-- `comparePassword()`: Compara contraseña con hash
-- `generateToken()`: Genera JWT token (expira en 7 días)
+#### 3. **Auth Utilities** ([backend/utils/auth.js](backend/utils/auth.js))
+- `hashPassword()`: Hashes passwords with bcrypt
+- `comparePassword()`: Compares password with hash
+- `generateToken()`: Generates JWT token (expires in 7 days)
 
-#### 4. **Endpoints de Autenticación** ([backend/index.js](backend/index.js))
-- `POST /api/auth/register` - Registrar nuevo usuario
-- `POST /api/auth/login` - Iniciar sesión
-- `GET /api/auth/me` - Obtener usuario actual (protegido)
+#### 4. **Authentication Endpoints** ([backend/index.js](backend/index.js))
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Sign in
+- `GET /api/auth/me` - Get current user (protected)
+- `POST /api/auth/invite` - Invite user to organization (admin only)
 
-#### 5. **Rutas Protegidas**
-Todas las rutas ahora requieren autenticación:
-- `GET /api/assets` - Requiere token JWT
-- `POST /api/tickets` - Requiere token JWT (usa ID del usuario autenticado)
-- `GET /api/tickets` - Requiere token JWT + rol ADMIN
-- `PATCH /api/tickets/:id/close` - Requiere token JWT + rol ADMIN
+#### 5. **Protected Routes**
+All routes now require authentication:
+- `GET /api/assets` - Requires JWT token
+- `POST /api/tickets` - Requires JWT token (uses authenticated user ID)
+- `GET /api/tickets` - Requires JWT token + ADMIN role
+- `PATCH /api/tickets/:id/close` - Requires JWT token + ADMIN role
 
 ### Frontend
 
 #### 1. **AuthContext** ([frontend/src/context/AuthContext.jsx](frontend/src/context/AuthContext.jsx))
-Provee:
-- `user` - Usuario actual
-- `loading` - Estado de carga
-- `login(email, password)` - Función de login
-- `register(name, email, password)` - Función de registro
-- `logout()` - Función de logout
-- `isAdmin` - Booleano si es admin
-- `isAuthenticated` - Booleano si está autenticado
+Provides:
+- `user` - Current user
+- `loading` - Loading state
+- `login(email, password)` - Login function
+- `register(name, email, password)` - Register function
+- `logout()` - Logout function
+- `isAdmin` - Boolean if admin
+- `isAuthenticated` - Boolean if authenticated
+- `organization` - Organization object
 
-#### 2. **Componentes de Auth**
-- [Login.jsx](frontend/src/components/Login.jsx) - Formulario de inicio de sesión
-- [Register.jsx](frontend/src/components/Register.jsx) - Formulario de registro
+#### 2. **Auth Components**
+- [Login.jsx](frontend/src/components/Login.jsx) - Login form
+- [Register.jsx](frontend/src/components/Register.jsx) - Registration form
 
-#### 3. **Axios Interceptor** ([frontend/src/api/client.js](frontend/src/api/client.js))
-Automáticamente agrega el token JWT a todas las peticiones:
+#### 3. **API Client** ([frontend/src/api/client.js](frontend/src/api/client.js))
+Axios interceptor that:
+- Auto-includes `Authorization: Bearer {token}` in all requests
+- Redirects to login on 401 Unauthorized
+
+#### 4. **Conditional UI** ([frontend/src/App.jsx](frontend/src/App.jsx))
+- Shows Login/Register if not authenticated
+- Shows Dashboard only for admins (`isAdmin`)
+- Shows Tickets view only for admins
+
+---
+
+## 🔒 Security Features
+
+### 1. **Password Hashing**
 ```javascript
-Authorization: Bearer <token>
+// bcrypt with 10 salt rounds
+const hashedPassword = await hashPassword('password123');
+// Result: $2b$10$...
 ```
 
-#### 4. **App.jsx actualizado**
-- Muestra Login/Register si no está autenticado
-- Solo muestra panel Admin si `isAdmin === true`
-- Botón de logout
-- Muestra nombre del usuario
+### 2. **JWT Token**
+```javascript
+{
+  id: 1,
+  email: "admin@acme.com",
+  role: "ADMIN",
+  organizationId: 1,
+  iat: 1234567890,
+  exp: 1234567890 + (7 * 24 * 60 * 60) // 7 days
+}
+```
 
-## 🧪 Usuarios de Prueba
+### 3. **Token Storage**
+- Stored in `localStorage` as `token`
+- Sent in `Authorization` header
+- Auto-removed on logout or 401
 
-Después de ejecutar `npm run seed`:
+### 4. **Middleware Chain**
+```javascript
+app.get('/api/tickets',
+  authenticateToken,    // 1. Verify JWT
+  requireAdmin,         // 2. Check role
+  attachOrganization,   // 3. Extract orgId
+  requireOrganization,  // 4. Ensure orgId exists
+  async (req, res) => { // 5. Execute logic
+    // req.user contains decoded JWT
+    // req.organizationId contains org ID
+  }
+);
+```
 
-| Email | Password | Rol |
-|-------|----------|-----|
-| admin@assetflow.com | admin123 | ADMIN |
-| employee@assetflow.com | employee123 | EMPLOYEE |
+---
 
-## 🚀 Cómo Probarlo
+## 🧪 Test Users
 
-### 1. Inicia el backend
+After running `npm run seed`:
+
+### Acme Corporation
+- **Admin**: `admin@acme.com` / `admin123`
+  - Can view Dashboard
+  - Can manage tickets
+  - Can invite users
+- **Employee**: `employee@acme.com` / `employee123`
+  - Can report failures
+  - Cannot view Dashboard
+  - Cannot manage tickets
+
+### Tech Startup Inc
+- **Admin**: `admin@techstartup.com` / `admin123`
+- **Employee**: `employee@techstartup.com` / `employee123`
+
+---
+
+## 🎯 Role Permissions
+
+| Feature | EMPLOYEE | ADMIN |
+|---------|----------|-------|
+| View own organization's assets | ✅ | ✅ |
+| Report asset failures | ✅ | ✅ |
+| View Dashboard | ❌ | ✅ |
+| View all tickets | ❌ | ✅ |
+| Close tickets | ❌ | ✅ |
+| Invite users | ❌ | ✅ |
+| View analytics | ❌ | ✅ |
+
+---
+
+## 📝 Code Examples
+
+### Frontend: Login
+```javascript
+const { login } = useAuth();
+
+const result = await login(email, password);
+if (result.success) {
+  // User is now authenticated
+  // Token saved to localStorage
+  // Redirected to app
+}
+```
+
+### Backend: Protect Route
+```javascript
+app.get('/api/admin-only',
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    // Only admins reach here
+    res.json({ message: 'Admin access granted' });
+  }
+);
+```
+
+### Backend: Get Current User
+```javascript
+app.get('/api/profile',
+  authenticateToken,
+  async (req, res) => {
+    // req.user contains:
+    // { id, email, role, organizationId }
+    res.json(req.user);
+  }
+);
+```
+
+---
+
+## 🔐 JWT Secret
+
+**⚠️ CRITICAL:** Change `JWT_SECRET` in production!
+
 ```bash
-cd backend
-npm run dev
+# backend/.env
+JWT_SECRET="your-super-secret-key-min-32-characters"
 ```
 
-### 2. Inicia el frontend
+Generate a strong secret:
 ```bash
-cd frontend
-npm run dev
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### 3. Abre http://localhost:5173
+---
 
-### 4. Prueba diferentes escenarios:
+## 🐛 Troubleshooting
 
-**Como Employee:**
-1. Login con `employee@assetflow.com / employee123`
-2. ✅ Puede ver assets
-3. ✅ Puede crear tickets
-4. ❌ NO ve el panel de Admin
+### "Invalid token"
+- Token expired (7 days)
+- JWT_SECRET changed
+- Token manually modified
 
-**Como Admin:**
-1. Login con `admin@assetflow.com / admin123`
-2. ✅ Puede ver assets
-3. ✅ Puede crear tickets
-4. ✅ SÍ ve el panel de Admin
-5. ✅ Puede cerrar tickets
+**Solution:** Logout and login again
 
-## 🔒 Características de Seguridad
+### "Unauthorized"
+- No token provided
+- Token in wrong format
 
-1. **Passwords Hasheados**: Usa bcrypt con 10 salt rounds
-2. **JWT Tokens**: Expiran en 7 días
-3. **Protected Routes**: Middleware verifica token en cada request
-4. **Role-Based Access Control (RBAC)**: Solo admins pueden ver/cerrar tickets
-5. **Validación de Input**: Email, password mínimo 6 caracteres
-6. **Error Handling**: Mensajes de error apropiados sin exponer detalles
+**Solution:** Check `Authorization` header format: `Bearer {token}`
 
-## 📝 Variables de Entorno
+### "Forbidden"
+- User is EMPLOYEE trying to access admin route
 
-Crea `.env` en `backend/`:
-```env
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-```
+**Solution:** Upgrade user role to ADMIN
 
-⚠️ **IMPORTANTE**: Cambia `JWT_SECRET` en producción!
+---
 
-## 🔄 Flujo de Autenticación
+## 🚀 Production Checklist
 
-```
-1. Usuario hace login → POST /api/auth/login
-2. Backend valida credenciales → bcrypt.compare()
-3. Backend genera JWT → jwt.sign()
-4. Frontend guarda token → localStorage.setItem('token')
-5. Axios agrega token a requests → Authorization: Bearer <token>
-6. Middleware verifica token → jwt.verify()
-7. Request continúa con req.user = { id, email, role }
-```
+- [ ] Change `JWT_SECRET` to secure random string
+- [ ] Set token expiration appropriate for use case
+- [ ] Implement refresh tokens (optional)
+- [ ] Add rate limiting on auth endpoints
+- [ ] Implement 2FA (optional)
+- [ ] Add password reset flow
+- [ ] Log authentication attempts
+- [ ] Monitor for brute force attacks
 
-## 📚 Próximos Pasos Recomendados
+---
 
-Para llevar esto a un nivel SaaS profesional:
+## 📚 Resources
 
-1. ✅ **Autenticación con JWT + Roles** ← YA IMPLEMENTADO
-2. ⏭️ **Multi-tenancy** (Organizaciones)
-3. ⏭️ **Sistema de Suscripciones** (Stripe)
-4. ⏭️ **Dashboard con Analytics**
-5. ⏭️ **Testing** (Jest + Vitest)
-6. ⏭️ **CI/CD** (GitHub Actions)
+- [JWT.io](https://jwt.io) - Decode and inspect tokens
+- [bcrypt](https://www.npmjs.com/package/bcrypt) - Password hashing
+- [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) - JWT library
 
-## 🐛 Debugging
+---
 
-Si tienes problemas:
-
-1. **401 Unauthorized**: Token inválido o expirado → Logout y login nuevamente
-2. **403 Forbidden**: Usuario no tiene permisos → Verifica rol del usuario
-3. **Network Error**: Backend no está corriendo → `cd backend && npm run dev`
-
-## 📖 API Testing con curl
-
-```bash
-# Register
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test User","email":"test@test.com","password":"test123"}'
-
-# Login
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@assetflow.com","password":"admin123"}'
-
-# Get assets (con token)
-curl http://localhost:3000/api/assets \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
+_Last updated: February 13, 2026_

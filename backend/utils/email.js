@@ -69,8 +69,8 @@ async function sendTicketNotification(organizationId, ticket, asset, user) {
             <p>A new ticket has been created by <strong>${user.name}</strong>.</p>
             
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 5px 0;"><strong>Asset:</strong> ${asset.name}</p>
-              <p style="margin: 5px 0;"><strong>Location:</strong> ${asset.location}</p>
+              <p style="margin: 5px 0;"><strong>Asset:</strong> ${asset.name} (${asset.serialNumber})</p>
+              <p style="margin: 5px 0;"><strong>Type:</strong> ${asset.type}</p>
               <p style="margin: 5px 0;"><strong>Description:</strong></p>
               <p style="margin: 5px 0; padding: 10px; background-color: white; border-radius: 4px;">${ticket.description}</p>
               <p style="margin: 5px 0;"><strong>Reported by:</strong> ${user.name} (${user.email})</p>

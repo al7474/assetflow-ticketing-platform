@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -6,8 +6,35 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 function PricingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentTier, setCurrentTier] = useState('FREE');
+  const [fetchingPlan, setFetchingPlan] = useState(true);
+
+  useEffect(() => {
+    fetchCurrentPlan();
+  }, []);
+
+  const fetchCurrentPlan = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await axios.get(`${API_URL}/api/subscription/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setCurrentTier(response.data.tier);
+    } catch (err) {
+      console.error('Failed to fetch current plan:', err);
+    } finally {
+      setFetchingPlan(false);
+    }
+  };
 
   const handleSubscribe = async (tier) => {
+    if (tier === currentTier) {
+      return; // Already on this plan
+    }
+
     setLoading(true);
     setError('');
 
@@ -45,9 +72,7 @@ function PricingPage() {
         'Up to 2 users',
         'Basic analytics',
         'Email support'
-      ],
-      cta: 'Current Plan',
-      disabled: true
+      ]
     },
     {
       tier: 'PRO',
@@ -62,7 +87,6 @@ function PricingPage() {
         'Priority email support',
         'Custom branding'
       ],
-      cta: 'Upgrade to Pro',
       popular: true
     },
     {
@@ -79,10 +103,20 @@ function PricingPage() {
         'Custom branding',
         'API access',
         'SLA guarantee'
-      ],
-      cta: 'Upgrade to Enterprise'
+      ]
     }
   ];
+
+  const getButtonText = (tier) => {
+    if (fetchingPlan) return 'Loading...';
+    if (tier === currentTier) return '✓ Current Plan';
+    if (tier === 'FREE' && currentTier !== 'FREE') return 'Downgrade';
+    return `Upgrade to ${tier === 'PRO' ? 'Pro' : 'Enterprise'}`;
+  };
+
+  const isButtonDisabled = (tier) => {
+    return tier === currentTier || loading || fetchingPlan;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -151,16 +185,16 @@ function PricingPage() {
 
                 <button
                   onClick={() => handleSubscribe(plan.tier)}
-                  disabled={plan.disabled || loading}
+                  disabled={isButtonDisabled(plan.tier)}
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                    plan.disabled
-                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    plan.tier === currentTier
+                      ? 'bg-green-100 text-green-800 cursor-not-allowed border-2 border-green-500'
                       : plan.popular
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-800 text-white hover:bg-gray-900'
-                  } ${loading ? 'opacity-50 cursor-wait' : ''}`}
+                  } ${loading || fetchingPlan ? 'opacity-50 cursor-wait' : ''}`}
                 >
-                  {loading ? 'Processing...' : plan.cta}
+                  {getButtonText(plan.tier)}
                 </button>
               </div>
             </div>

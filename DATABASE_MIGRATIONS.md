@@ -1,379 +1,389 @@
-# 🗄️ Gestión de Base de Datos: Desarrollo vs Producción
+# 🗄️ Database Management: Development vs Production
 
-## ⚠️ IMPORTANTE: NO Borrar Data en Producción
+## ⚠️ IMPORTANT: NEVER Delete Data in Production
 
-### 🔴 Lo que NUNCA debes hacer en producción:
+### 🔴 What you should NEVER do in production:
 ```bash
-# ❌ NUNCA ejecutar esto en producción
-npx prisma migrate reset    # Borra toda la base de datos
-npx prisma db push --force-reset  # Borra toda la base de datos
+# ❌ NEVER run these in production
+npx prisma migrate reset    # Deletes entire database
+npx prisma db push --force-reset  # Deletes entire database
 ```
 
 ---
 
-## 🏗️ Desarrollo (Local)
+## 🏗️ Development (Local)
 
-### ✅ Flujo Normal de Desarrollo
+### ✅ Normal Development Flow
 
-**1. Cambiar el schema:**
+**1. Change the schema:**
 ```prisma
-// Agregar un nuevo campo
+// Add a new field
 model User {
-  phoneNumber String?  // ← Nuevo campo opcional
+  phoneNumber String?  // ← New optional field
 }
 ```
 
-**2. Crear migración:**
+**2. Create migration:**
 ```bash
 npx prisma migrate dev --name add_phone_to_users
 ```
-Esto:
-- Crea el SQL de migración
-- Aplica la migración
-- Regenera Prisma Client
-- ✅ **NO borra datos** (a menos que uses `--create-only`)
+This:
+- Creates migration SQL
+- Applies the migration
+- Regenerates Prisma Client
+- ✅ **Does NOT delete data** (unless you use `--create-only`)
 
-**3. Si necesitas empezar de cero (solo en desarrollo):**
+**3. If you need to start fresh (only in development):**
 ```bash
 npx prisma migrate reset
 npm run seed
 ```
 
-### 🔧 Comandos de Desarrollo
+### 🔧 Development Commands
 
-| Comando | Qué hace | ¿Borra data? |
-|---------|----------|--------------|
-| `npx prisma migrate dev` | Crea y aplica migración | No |
-| `npx prisma migrate reset` | Borra DB y re-crea todo | ✅ SÍ |
-| `npx prisma db push` | Sync schema sin migración | No* |
-| `npm run seed` | Puebla DB con datos test | No (usa upsert) |
+| Command | What it does | Deletes data? |
+|---------|--------------|---------------|
+| `npx prisma migrate dev` | Creates and applies migration | No |
+| `npx prisma migrate reset` | Deletes DB and recreates everything | ✅ YES |
+| `npx prisma db push` | Syncs schema without migration | No* |
+| `npm run seed` | Populates DB with test data | No (uses upsert) |
 
-*`db push` puede borrar data si eliminas columnas
+*`db push` can delete data if you remove fields or change types incompatibly.
 
 ---
 
-## 🚀 Producción
+## 🚀 Production (Railway)
 
-### ✅ Flujo de Despliegue Seguro
+### ✅ Safe Production Workflow
 
-**1. En tu local:**
-```bash
-# Crear la migración (sin aplicarla aún)
-npx prisma migrate dev --name add_feature_x
+**1. Make schema changes locally:**
+```prisma
+// In development
+model User {
+  phoneNumber String?
+}
 ```
 
-**2. Commit y push:**
+**2. Create migration locally:**
 ```bash
-git add prisma/migrations
-git commit -m "feat: add feature x migration"
+npx prisma migrate dev --name add_phone_to_users
+```
+This creates a file in `prisma/migrations/`
+
+**3. Test locally:**
+```bash
+# Verify migration works
+npm run dev
+# Test the new field
+```
+
+**4. Commit migration:**
+```bash
+git add prisma/migrations/
+git commit -m "Add phoneNumber field to User"
+```
+
+**5. Deploy to Railway:**
+```bash
 git push
 ```
 
-**3. En el servidor de producción:**
+**6. Railway auto-runs:**
 ```bash
-# Solo aplica migraciones pendientes (NO borra data)
 npx prisma migrate deploy
 ```
+This applies pending migrations to production DB.
 
-### 🔒 Comandos de Producción
+---
 
-| Comando | Qué hace | ¿Borra data? |
-|---------|----------|--------------|
-| `npx prisma migrate deploy` | Aplica migraciones pendientes | No |
-| `npx prisma migrate status` | Verifica migraciones aplicadas | No |
+## 📋 Migration Best Practices
 
-### ❌ **NUNCA** en Producción
+### ✅ DO:
+
+1. **Always use migrations in production**
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+2. **Test migrations locally first**
+   ```bash
+   npx prisma migrate dev
+   # Test thoroughly
+   ```
+
+3. **Make backwards-compatible changes**
+   ```prisma
+   // ✅ GOOD: Optional field
+   model User {
+     phoneNumber String?
+   }
+   ```
+
+4. **Write data migration scripts** if needed
+   ```javascript
+   // scripts/migrate-data.js
+   const { PrismaClient } = require('@prisma/client');
+   const prisma = new PrismaClient();
+   
+   async function main() {
+     // Update existing records
+     await prisma.user.updateMany({
+       where: { phoneNumber: null },
+       data: { phoneNumber: '' }
+     });
+   }
+   ```
+
+### ❌ DON'T:
+
+1. **Don't remove required fields without data migration**
+   ```prisma
+   // ❌ BAD: Removes field with data
+   model User {
+     // phoneNumber String  ← Removed!
+   }
+   ```
+
+2. **Don't change field types incompatibly**
+   ```prisma
+   // ❌ BAD: String to Int without migration
+   model User {
+     age Int // Was String before
+   }
+   ```
+
+3. **Don't use `db push` in production**
+   ```bash
+   # ❌ AVOID in production
+   npx prisma db push
+   ```
+
+4. **Don't edit migration files manually**
+   ```sql
+   -- ❌ DON'T edit these after creation
+   -- migrations/20240101_add_field/migration.sql
+   ```
+
+---
+
+## 🔄 Common Scenarios
+
+### Scenario 1: Add Optional Field
+
+**Schema Change:**
+```prisma
+model User {
+  phoneNumber String?  // Optional
+}
+```
+
+**Commands:**
 ```bash
-# ❌ Estos comandos SON DESTRUCTIVOS
-npx prisma migrate reset
-npx prisma migrate dev
-npx prisma db push --force-reset
-npm run seed  # (a menos que sea el primer deploy)
+# Development
+npx prisma migrate dev --name add_phone_number
+
+# Production (via Railway deploy)
+# Automatically runs: npx prisma migrate deploy
 ```
+
+**Result:** ✅ Safe, no data loss
 
 ---
 
-## 📊 Migraciones Seguras vs Peligrosas
+### Scenario 2: Add Required Field (Existing Data)
 
-### ✅ **Migraciones Seguras** (No pierden data)
-
+**Schema Change:**
 ```prisma
-// ✅ Agregar campo opcional
 model User {
-  phoneNumber String?  // Seguro: nullable
-}
-
-// ✅ Agregar campo con default
-model User {
-  status String @default("active")  // Seguro: tiene default
-}
-
-// ✅ Agregar nueva tabla
-model Notification {
-  id Int @id
-}
-
-// ✅ Agregar índice
-@@index([email])
-
-// ✅ Agregar relación opcional
-organizationId Int?
-```
-
-### ⚠️ **Migraciones Que Requieren Cuidado**
-
-```prisma
-// ⚠️ Agregar campo requerido sin default
-model User {
-  phoneNumber String  // ¡Problema! ¿Qué valor para users existentes?
+  phoneNumber String  // Required!
 }
 ```
 
-**Solución:**
-```prisma
-// Paso 1: Agregar como opcional
-phoneNumber String?
+**Problem:** Existing users don't have phone numbers!
 
-// Paso 2: Migrar data manualmente
-UPDATE User SET phoneNumber = '000-000-0000' WHERE phoneNumber IS NULL;
+**Solution:**
 
-// Paso 3: Hacer requerido (nueva migración)
-phoneNumber String @default("000-000-0000")
-```
+1. **First migration: Add optional**
+   ```prisma
+   phoneNumber String?
+   ```
 
-### 🔴 **Migraciones Destructivas** (PIERDEN DATA)
+2. **Run data migration:**
+   ```javascript
+   await prisma.user.updateMany({
+     where: { phoneNumber: null },
+     data: { phoneNumber: 'N/A' }
+   });
+   ```
 
-```prisma
-// 🔴 Eliminar columna
-model User {
-  // password String  ← Comentado = SE BORRA
-}
-
-// 🔴 Eliminar tabla
-// model OldTable { }  ← SE BORRA
-
-// 🔴 Cambiar tipo de datos incompatible
-email String  →  email Int  // ¡Perderás data!
-```
+3. **Second migration: Make required**
+   ```prisma
+   phoneNumber String
+   ```
 
 ---
 
-## 🎯 Estrategia: Migraciones Aditivas
+### Scenario 3: Rename Field
 
-### Regla de Oro: **Nunca elimines, siempre agrega**
-
-**❌ Mal:**
+**Don't:**
 ```prisma
 model User {
-  // oldField String  ← Eliminado
-  newField String
+  // name String         ← Removed
+  fullName String        // ← Added
 }
 ```
+This loses data!
 
-**✅ Bien:**
-```prisma
-model User {
-  oldField String @default("")  // Deprecado pero no eliminado
-  newField String
-}
-```
-
-Después de 2-3 versiones, cuando estés seguro que nada usa `oldField`, puedes eliminarlo en otra migración.
-
----
-
-## 🔄 Caso Real: Agregamos Organization
-
-### Lo que hicimos:
-
-```prisma
-model User {
-  organizationId Int  // ← Campo requerido
-  organization Organization @relation(...)
-}
-```
-
-### ⚠️ Problema:
-Si hubiera usuarios existentes en producción, esta migración **FALLARÍA** porque `organizationId` es requerido pero no tiene valor default.
-
-### ✅ Solución Correcta:
-
-**Paso 1: Migración inicial (opcional)**
-```prisma
-model User {
-  organizationId Int?  // ← Opcional primero
-}
-```
-
-**Paso 2: Script de data migration**
-```javascript
-// Asignar todos los usuarios a una org default
-await prisma.user.updateMany({
-  where: { organizationId: null },
-  data: { organizationId: 1 }
-});
-```
-
-**Paso 3: Segunda migración (requerido)**
-```prisma
-model User {
-  organizationId Int  // ← Ahora requerido
-}
-```
-
----
-
-## 📝 Seed Script: Solo Primera Vez
-
-### ❌ NO correr seed en cada deploy
-
-El seed (`npm run seed`) está diseñado para:
-- ✅ Setup inicial (primera vez)
-- ✅ Desarrollo local
-- ✅ Tests automatizados
-- ❌ NO en producción (después del setup inicial)
-
-### ✅ Alternativa: Data Fixtures
-
-Para datos iniciales en producción, usa un script de "setup" que:
-1. Verifica si ya existen datos
-2. Solo crea lo necesario
-3. No usa `upsert` en producción
-
-**Ejemplo:**
-```javascript
-// setup-production.js
-async function setupProduction() {
-  // Verificar si ya hay datos
-  const existingOrgs = await prisma.organization.count();
-  
-  if (existingOrgs > 0) {
-    console.log('✅ Production already setup, skipping...');
-    return;
-  }
-  
-  // Solo crear si es la primera vez
-  console.log('🏗️ Setting up production for first time...');
-  // ... crear datos necesarios
-}
-```
-
----
-
-## 🚦 Environment Variables
-
-### .env.development (Local PostgreSQL)
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/assetflow_dev"
-```
-
-### .env.production (Railway)
-```env
-DATABASE_URL="postgresql://user:pass@host.railway.app:5432/railway"
-```
-
-### Scripts en package.json
-```json
-{
-  "scripts": {
-    "migrate:dev": "prisma migrate dev",
-    "migrate:deploy": "prisma migrate deploy",
-    "migrate:status": "prisma migrate status"
-  }
-}
-```
-
----
-
-## 📋 Checklist de Deployment
-
-### Antes de hacer deploy:
-
-- [ ] Todas las migraciones probadas localmente
-- [ ] Migraciones son **aditivas** (no eliminan columnas)
-- [ ] Campos requeridos tienen `@default()` o son opcionales
-- [ ] Backup de producción creado
-- [ ] Variables de entorno configuradas
-- [ ] NO usar `migrate reset` en producción
-- [ ] Usar `migrate deploy` para aplicar cambios
-
-### Durante el deploy:
-
+**Do:**
 ```bash
-# 1. Pull latest code
-git pull origin main
+npx prisma migrate dev --create-only --name rename_name_to_fullname
+```
 
-# 2. Install dependencies
-npm install
-
-# 3. Apply migrations (safe)
-npx prisma migrate deploy
-
-# 4. Generate Prisma Client
-npx prisma generate
-
-# 5. Restart application
-pm2 restart app
+Then edit the migration:
+```sql
+-- Rename instead of drop/add
+ALTER TABLE "User" RENAME COLUMN "name" TO "fullName";
 ```
 
 ---
 
-## 🔍 Debugging Migraciones
+## 📊 Migration Status
 
-### Ver estado:
+### Check Migration Status
 ```bash
 npx prisma migrate status
 ```
 
-### Ver SQL de una migración:
-```bash
-cat prisma/migrations/20260201161218_add_organizations/migration.sql
+Output:
+```
+Database schema is up to date!
+
+The following migrations are applied:
+20240101120000_init
+20240102130000_add_subscription_fields
 ```
 
-### Rollback (solo desarrollo):
+### If Migrations are Pending
 ```bash
-# Borra la última migración de la carpeta
-rm -rf prisma/migrations/ultima_migracion
-npx prisma migrate reset
+# Apply pending migrations
+npx prisma migrate deploy
 ```
 
-### Rollback (producción):
-❌ **No hay rollback automático**
-✅ Debes crear una **nueva migración** que revierta los cambios
+---
+
+## 🐛 Troubleshooting
+
+### "Migration failed"
+
+**Check:**
+1. Database connection
+2. Migration SQL syntax
+3. Data constraints
+
+**Fix:**
+```bash
+# Mark migration as rolled back
+npx prisma migrate resolve --rolled-back {migration_name}
+
+# Fix the issue
+# Try again
+npx prisma migrate deploy
+```
+
+### "Drift detected"
+
+Schema doesn't match migrations.
+
+**In Development:**
+```bash
+npx prisma db push
+```
+
+**In Production:**
+```bash
+# Create migration to sync
+npx prisma migrate dev
+```
+
+### "Database is locked"
+
+Another process is using the database.
+
+**Solution:**
+```bash
+# Wait or kill other connections
+# Then retry
+```
 
 ---
 
-## 📚 Resumen
+## 📚 Railway-Specific Notes
 
-| Aspecto | Desarrollo | Producción |
-|---------|-----------|-----------|
-| Comando principal | `migrate dev` | `migrate deploy` |
-| ¿Borra data? | Opcional (reset) | Nunca |
-| Seed | Sí, siempre | Solo primera vez |
-| Database | PostgreSQL local | PostgreSQL (Railway) |
-| Backups | No necesario | ✅ SIEMPRE |
-| Rollback | `migrate reset` | Nueva migración |
+### Auto-Deploy on Push
+
+Railway automatically runs:
+```bash
+# Install dependencies
+npm install
+
+# Run migrations
+npx prisma migrate deploy
+
+# Start app
+npm start
+```
+
+### Check Logs
+
+See migration results:
+```
+Railway Dashboard → Deployments → Logs
+```
+
+Look for:
+```
+✓ Prisma migrate deploy completed
+Applied migration 20240101_add_field
+```
 
 ---
 
-## 💡 Best Practices
+## 🎯 Production Deployment Checklist
 
-1. **Siempre haz backup antes de migraciones en producción**
-2. **Prueba migraciones en staging primero**
-3. **Usa migraciones aditivas (no destructivas)**
-4. **Nunca elimines columnas inmediatamente**
-5. **Siempre incluye `@default()` para campos requeridos**
-6. **Documenta migraciones complejas con comentarios**
-7. **Usa transactions para data migrations**
+Before deploying schema changes:
+
+- [ ] Schema changes committed
+- [ ] Migrations created locally
+- [ ] Migrations tested in development
+- [ ] Backwards compatibility verified
+- [ ] Data migration script ready (if needed)
+- [ ] Backup created (optional, Railway auto-backups)
+- [ ] Deployed to Railway
+- [ ] Migration logs checked
+- [ ] Application tested
 
 ---
 
-## 🎓 Para Reclutadores
+## 🔐 Environment Variables
 
-Esta documentación demuestra:
-- ✅ Entendimiento de **database lifecycle management**
-- ✅ Diferencia entre **dev/staging/prod environments**
-- ✅ **Zero-downtime deployments**
-- ✅ **Data safety** y prevención de pérdida de datos
-- ✅ **Migration strategies** profesionales
-- ✅ Experiencia con **ORM migrations** (Prisma)
+Required for migrations:
+
+```bash
+# Railway (Production)
+DATABASE_URL="postgresql://..."
+
+# Local (.env)
+DATABASE_URL="postgresql://postgres:password@localhost:5432/assetflow_dev"
+```
+
+---
+
+## 📖 Further Reading
+
+- [Prisma Migrate](https://www.prisma.io/docs/concepts/components/prisma-migrate)
+- [Railway Docs](https://docs.railway.app/databases/postgresql)
+- [Database Migration Best Practices](https://www.prisma.io/docs/guides/database/production-migrations)
+
+---
+
+_Last updated: February 13, 2026_

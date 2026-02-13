@@ -1,228 +1,240 @@
 # 🚂 Railway Deployment Guide
 
-Esta guía te ayudará a desplegar AssetFlow en Railway de forma gratuita.
+This guide will help you deploy AssetFlow to Railway for free.
 
-## 📋 Pre-requisitos
+## 📋 Prerequisites
 
-- Cuenta de GitHub con el repositorio de AssetFlow
-- Cuenta de Railway (crear en https://railway.app)
-- $5 USD de créditos gratuitos mensuales incluidos en Railway
+- GitHub account with AssetFlow repository
+- Railway account (create at https://railway.app)
+- $5 USD free monthly credits included with Railway
 
-## 🎯 Paso 1: Preparar el Repositorio
+## 🎯 Step 1: Prepare Repository
 
-Asegúrate de que todos los cambios estén commiteados:
+Ensure all changes are committed:
 
 ```bash
 git add .
-git commit -m "Preparar para deployment en Railway"
+git commit -m "Prepare for Railway deployment"
 git push origin main
 ```
 
-## 🚀 Paso 2: Crear Proyecto en Railway
+## 🚀 Step 2: Create Railway Project
 
-1. Ve a https://railway.app y haz login con GitHub
-2. Click en "New Project"
-3. Selecciona "Deploy from GitHub repo"
-4. Autoriza Railway a acceder a tus repositorios
-5. Selecciona el repositorio `assetflow-ticketing-platform`
+1. Go to https://railway.app and login with GitHub
+2. Click "New Project"
+3. Select "Deploy from GitHub repo"
+4. Authorize Railway to access your repositories
+5. Select the `assetflow-ticketing-platform` repository
 
-## 🗄️ Paso 3: Crear Base de Datos PostgreSQL
+## 🗄️ Step 3: Create PostgreSQL Database
 
-1. En tu proyecto de Railway, click en "+ New"
-2. Selecciona "Database" → "Add PostgreSQL"
-3. Railway creará automáticamente una instancia de PostgreSQL
-4. La variable `DATABASE_URL` se creará automáticamente
+1. In your Railway project, click "+ New"
+2. Select "Database" → "Add PostgreSQL"
+3. Railway will automatically create a PostgreSQL instance
+4. The `DATABASE_URL` variable will be created automatically
 
-## ⚙️ Paso 4: Configurar Backend
+## ⚙️ Step 4: Configure Backend
 
-### 4.1 Seleccionar el Servicio Backend
+### 4.1 Select Backend Service
 
-1. Click en el servicio que Railway creó de tu repositorio
-2. Ve a "Settings" → "Service"
-3. En "Root Directory" escribe: `backend`
-4. En "Start Command" escribe: `npm start`
+1. Click on the service Railway created from your repository
+2. Go to "Settings" → "Service"
+3. In "Root Directory" enter: `backend`
+4. In "Start Command" enter: `npm start`
 
-### 4.2 Configurar Variables de Entorno
+### 4.2 Configure Environment Variables
 
-Ve a "Variables" y agrega las siguientes:
+Go to "Variables" and add the following:
 
 ```
 DATABASE_URL=${{Postgres.DATABASE_URL}}
-JWT_SECRET=tu_secreto_super_seguro_aqui_cambiar_en_produccion
+JWT_SECRET=your_super_secure_secret_here_change_in_production
 NODE_ENV=production
 PORT=3000
+FRONTEND_URL=${{frontend.url}}
+STRIPE_SECRET_KEY=sk_live_your_key
+STRIPE_WEBHOOK_SECRET=whsec_your_secret
+STRIPE_PRO_PRICE_ID=price_your_pro_id
+STRIPE_ENTERPRISE_PRICE_ID=price_your_enterprise_id
+RESEND_API_KEY=re_your_resend_key
 ```
 
-**IMPORTANTE:** 
-- `DATABASE_URL` se auto-completa cuando seleccionas la referencia a Postgres
-- Cambia `JWT_SECRET` por un string aleatorio seguro (puedes generarlo con: `openssl rand -base64 32`)
+**IMPORTANT:** 
+- `DATABASE_URL` autoCompletes when you select the Postgres reference
+- Change `JWT_SECRET` to a secure random string (generate with: `openssl rand -base64 32`)
+- Configure Stripe keys from your Stripe dashboard
+- Get Resend API key from https://resend.com
 
-### 4.3 Configurar Build
+### 4.3 Configure Build
 
-Railway detectará automáticamente el `package.json` y ejecutará:
+Railway will automatically detect `package.json` and run:
 1. `npm install`
-2. `npm run build` (que ejecuta `prisma generate && prisma migrate deploy`)
+2. `npm run build` (which runs `prisma generate && prisma migrate deploy`)
 3. `npm start`
 
-## 🎨 Paso 5: Configurar Frontend
+## 🎨 Step 5: Configure Frontend
 
-### 5.1 Crear Nuevo Servicio
+### 5.1 Create New Service
 
-1. En tu proyecto Railway, click en "+ New"
-2. Selecciona "GitHub Repo" → selecciona el mismo repositorio
-3. Railway creará un segundo servicio
+1. In your Railway project, click "+ New"
+2. Select "GitHub Repo" → select the same repository
+3. Railway will create a second service
 
-### 5.2 Configurar el Servicio Frontend
+### 5.2 Configure Frontend Service
 
-1. Click en el nuevo servicio
-2. Ve a "Settings" → "Service"
-3. En "Root Directory" escribe: `frontend`
-4. En "Build Command" escribe: `npm run build`
-5. En "Start Command" escribe: `npm run preview`
+1. Click on the new service
+2. Go to "Settings" → "Service"
+3. In "Root Directory" enter: `frontend`
+4. In "Build Command" enter: `npm run build`
+5. In "Start Command" enter: `npm run preview`
 
-### 5.3 Configurar Variables de Entorno
+### 5.3 Configure Environment Variables
 
-Ve a "Variables" del servicio frontend y agrega:
+Go to "Variables" in the frontend service and add:
 
 ```
 VITE_API_URL=${{backend.url}}/api
 ```
 
-**IMPORTANTE:** 
-- `${{backend.url}}` es una referencia al servicio backend
-- Railway reemplazará esto automáticamente con la URL real del backend
+**IMPORTANT:** 
+- `${{backend.url}}` is a reference to the backend service
+- Railway will automatically replace this with the real backend URL
 
-## 🌐 Paso 6: Actualizar CORS
+## 🌐 Step 6: Update CORS
 
-Una vez que el frontend esté desplegado:
+Once the frontend is deployed:
 
-1. Copia la URL pública del frontend (ej: `https://tu-frontend.up.railway.app`)
-2. Ve a las variables de entorno del **backend**
-3. Agrega una nueva variable:
+1. Copy the public frontend URL (e.g., `https://your-frontend.up.railway.app`)
+2. Go to the **backend** environment variables
+3. Add a new variable:
 
 ```
-FRONTEND_URL=https://tu-frontend.up.railway.app
+FRONTEND_URL=https://your-frontend.up.railway.app
 ```
 
-4. Railway redesplegará automáticamente el backend
+4. Railway will automatically redeploy the backend
 
-## 📊 Paso 7: Ejecutar Seeds (Opcional)
+## 📊 Step 7: Run Seeds (Optional)
 
-Para poblar la base de datos con datos de prueba:
+To populate the database with test data:
 
-1. Ve al servicio **backend** en Railway
-2. Click en "Settings" → "Service"
-3. Scroll hasta "Deploy Logs" para ver los logs
-4. Abre la pestaña "Custom Start Command" temporalmente
-5. Cambia el comando a: `npm run seed && npm start`
-6. Railway redesplegará y ejecutará el seed
-7. **IMPORTANTE:** Después de que termine, vuelve a cambiar el comando a `npm start`
+1. Go to the **backend** service in Railway
+2. Click "Settings" → "Service"
+3. Scroll to "Deploy Logs" to view logs
+4. Temporarily open "Custom Start Command" tab
+5. Change the command to: `npm run seed && npm start`
+6. Railway will redeploy and run the seed
+7. **IMPORTANT:** After it finishes, change the command back to `npm start`
 
-**Alternativa con Railway CLI:**
+**Alternative with Railway CLI:**
 
 ```bash
-# Instalar Railway CLI
+# Install Railway CLI
 npm install -g @railway/cli
 
 # Login
 railway login
 
-# Conectar al proyecto
+# Connect to project
 railway link
 
-# Ejecutar seed
+# Run seed
 railway run npm run seed
 ```
 
-## ✅ Paso 8: Verificar Deployment
+## ✅ Step 8: Verify Deployment
 
-1. Abre la URL del frontend en tu navegador
-2. Intenta hacer login con las credenciales de prueba:
+1. Open the frontend URL in your browser
+2. Try logging in with test credentials:
    - Email: `admin@acme.com`
    - Password: `admin123`
-3. Verifica que puedas ver el dashboard con datos
+3. Verify you can see the dashboard with data
 
-## 🔧 Solución de Problemas
+## 🔧 Troubleshooting
 
 ### Error: "Prisma schema not found"
 
-**Solución:** Verifica que el Root Directory del backend sea `backend`
+**Solution:** Verify the backend Root Directory is `backend`
 
 ### Error: "CORS policy"
 
-**Solución:** 
-1. Verifica que `FRONTEND_URL` esté configurado en el backend
-2. Asegúrate de que la URL no tenga `/` al final
-3. Verifica los logs del backend para ver el error exacto
+**Solution:** 
+1. Verify `FRONTEND_URL` is configured in the backend
+2. Ensure the URL doesn't have a trailing `/`
+3. Check backend logs for the exact error
 
 ### Error: "Cannot connect to database"
 
-**Solución:**
-1. Verifica que `DATABASE_URL` esté configurado en el backend
-2. Usa la referencia: `${{Postgres.DATABASE_URL}}`
-3. Asegúrate de que el servicio PostgreSQL esté activo
+**Solution:**
+1. Verify `DATABASE_URL` is configured in the backend
+2. Use the reference: `${{Postgres.DATABASE_URL}}`
+3. Ensure the PostgreSQL service is active
 
 ### Error: "Build failed"
 
-**Solución:**
-1. Revisa los logs de build en Railway
-2. Verifica que `package.json` tenga el script `"build"`
-3. Para el backend: `"build": "prisma generate && prisma migrate deploy"`
+**Solution:**
+1. Review build logs in Railway
+2. Verify `package.json` has the `"build"` script
+3. For backend: `"build": "prisma generate && prisma migrate deploy"`
 
-### Frontend no se conecta al backend
+### Frontend doesn't connect to backend
 
-**Solución:**
-1. Verifica que `VITE_API_URL` esté configurado: `${{backend.url}}/api`
-2. Verifica que el backend esté corriendo (check health endpoint)
-3. Abre las DevTools del navegador → Console para ver errores
+**Solution:**
+1. Verify `VITE_API_URL` is configured: `${{backend.url}}/api`
+2. Verify the backend is running (check health endpoint)
+3. Open browser DevTools → Console to see errors
 
-## 💰 Gestión de Créditos
+## 💰 Credit Management
 
-Railway ofrece **$5 USD gratis al mes**, lo cual es suficiente para:
-- 1 servicio backend (Node.js)
-- 1 servicio frontend (Vite preview)
-- 1 base de datos PostgreSQL (500MB)
+Railway offers **$5 USD free per month**, which is enough for:
+- 1 backend service (Node.js)
+- 1 frontend service (Vite preview)
+- 1 PostgreSQL database (500MB)
 
-**Uso estimado:**
-- Backend: ~$3-4/mes
-- Frontend: ~$0.50-1/mes
-- PostgreSQL: Gratis hasta 500MB
+**Estimated usage:**
+- Backend: ~$3-4/month
+- Frontend: ~$0.50-1/month
+- PostgreSQL: Free up to 500MB
 
-**IMPORTANTE:** Monitorea tu uso en Railway Dashboard → Settings → Usage
+**IMPORTANT:** Monitor your usage in Railway Dashboard → Settings → Usage
 
-## 🔐 Seguridad Post-Deployment
+## 🔐 Post-Deployment Security
 
-1. **Cambiar JWT_SECRET:**
+1. **Change JWT_SECRET:**
    ```bash
    openssl rand -base64 32
    ```
-   Copia el resultado y actualiza la variable en Railway
+   Copy the result and update the variable in Railway
 
-2. **Eliminar usuarios de prueba:**
-   - Conéctate a la base de datos en producción
-   - Elimina los usuarios creados por `seed.js`
-   - Crea usuarios reales desde el UI de registro
+2. **Remove test users:**
+   - Connect to production database
+   - Delete users created by `seed.js`
+   - Create real users from registration UI
 
-3. **Configurar límites de rate:**
-   - Considera agregar `express-rate-limit` al backend
-   - Limita requests por IP para prevenir abuso
+3. **Configure rate limits:**
+   - Consider adding `express-rate-limit` to backend
+   - Limit requests per IP to prevent abuse
 
-## 📚 Recursos Adicionales
+## 📚 Additional Resources
 
 - [Railway Docs](https://docs.railway.app)
 - [Railway CLI](https://docs.railway.app/develop/cli)
 - [Prisma on Railway](https://docs.railway.app/guides/prisma)
 - [Monorepo Setup](https://docs.railway.app/deploy/monorepo)
 
-## 🎉 ¡Listo!
+## 🎉 Done!
 
-Tu aplicación AssetFlow ahora está desplegada en Railway. Puedes:
-- Compartir la URL del frontend con tu equipo
-- Monitorear logs en tiempo real en Railway Dashboard
-- Escalar verticalmente si necesitas más recursos
-- Configurar dominios personalizados (requiere plan Pro)
+Your AssetFlow application is now deployed on Railway. You can:
+- Share the frontend URL with your team
+- Monitor logs in real-time in Railway Dashboard
+- Scale vertically if you need more resources
+- Configure custom domains (requires Pro plan)
 
-**URLs importantes:**
-- Frontend: `https://tu-frontend.up.railway.app`
-- Backend API: `https://tu-backend.up.railway.app/api`
-- Dashboard: `https://railway.app/project/tu-proyecto`
+**Important URLs:**
+- Frontend: `https://your-frontend.up.railway.app`
+- Backend API: `https://your-backend.up.railway.app/api`
+- Dashboard: `https://railway.app/project/your-project`
+
+---
+
+_Last updated: February 13, 2026_

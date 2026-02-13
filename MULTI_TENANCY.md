@@ -1,10 +1,10 @@
 # 🏢 Multi-Tenancy Implementation Guide
 
-## ✅ Implementación Completa
+## ✅ Complete Implementation
 
 ### Backend
 
-#### 1. **Modelo Organization en Prisma** ([backend/prisma/schema.prisma](backend/prisma/schema.prisma))
+#### 1. **Organization Model in Prisma** ([backend/prisma/schema.prisma](backend/prisma/schema.prisma))
 ```prisma
 model Organization {
   id        Int      @id @default(autoincrement())
@@ -18,53 +18,53 @@ model Organization {
 }
 ```
 
-#### 2. **Relaciones Actualizadas**
-- `User` → pertenece a `Organization`
-- `Asset` → pertenece a `Organization`
-- `Ticket` → pertenece a `Organization`
+#### 2. **Updated Relationships**
+- `User` → belongs to `Organization`
+- `Asset` → belongs to `Organization`
+- `Ticket` → belongs to `Organization`
 
-Todos los modelos principales ahora tienen `organizationId` para aislamiento de datos.
+All main models now have `organizationId` for data isolation.
 
-#### 3. **Middleware de Organización** ([backend/middleware/organization.js](backend/middleware/organization.js))
-- `attachOrganization`: Extrae organizationId del usuario autenticado
-- `requireOrganization`: Asegura que organizationId esté presente
+#### 3. **Organization Middleware** ([backend/middleware/organization.js](backend/middleware/organization.js))
+- `attachOrganization`: Extracts organizationId from authenticated user
+- `requireOrganization`: Ensures organizationId is present
 
-#### 4. **Filtrado Automático por Organización**
-Todas las rutas ahora filtran datos por organización:
-- `GET /api/assets` - Solo assets de la organización del usuario
-- `POST /api/tickets` - Crea ticket en la organización del usuario
-- `GET /api/tickets` - Solo tickets de la organización (admin)
-- `PATCH /api/tickets/:id/close` - Solo tickets de la organización
+#### 4. **Automatic Organization Filtering**
+All routes now filter data by organization:
+- `GET /api/assets` - Only assets from user's organization
+- `POST /api/tickets` - Creates ticket in user's organization
+- `GET /api/tickets` - Only tickets from organization (admin)
+- `PATCH /api/tickets/:id/close` - Only tickets from organization
 
-#### 5. **JWT Token Actualizado**
-El token ahora incluye `organizationId`:
+#### 5. **Updated JWT Token**
+Token now includes `organizationId`:
 ```javascript
 {
   id: user.id,
   email: user.email,
   role: user.role,
-  organizationId: user.organizationId  // ← NUEVO
+  organizationId: user.organizationId  // ← NEW
 }
 ```
 
 ### Frontend
 
-#### 1. **AuthContext Actualizado** ([frontend/src/context/AuthContext.jsx](frontend/src/context/AuthContext.jsx))
-Ahora provee:
-- `organization` - Objeto con {id, name, slug}
-- `organizationId` - ID de la organización
+#### 1. **Updated AuthContext** ([frontend/src/context/AuthContext.jsx](frontend/src/context/AuthContext.jsx))
+Now provides:
+- `organization` - Object with {id, name, slug}
+- `organizationId` - Organization ID
 
-#### 2. **UI Actualizada** ([frontend/src/App.jsx](frontend/src/App.jsx))
-El header ahora muestra:
+#### 2. **Updated UI** ([frontend/src/App.jsx](frontend/src/App.jsx))
+Header now displays:
 ```
 Acme Corporation - Admin User (Admin)
 ```
 
 ---
 
-## 🧪 Organizaciones de Prueba
+## 🧪 Test Organizations
 
-Después de ejecutar `npm run seed`, tienes **2 organizaciones separadas**:
+After running `npm run seed`, you have **2 separate organizations**:
 
 ### 🏢 **Acme Corporation** (acme-corp)
 - **Admin**: `admin@acme.com` / `admin123`
@@ -74,87 +74,87 @@ Después de ejecutar `npm run seed`, tienes **2 organizaciones separadas**:
 ### 🚀 **Tech Startup Inc** (tech-startup)
 - **Admin**: `admin@techstartup.com` / `admin123`
 - **Employee**: `employee@techstartup.com` / `employee123`
-- **Assets**: 2 items (iPad, Monitor LG)
+- **Assets**: 2 items (iPad, LG Monitor)
 
 ---
 
-## 🔒 Aislamiento de Datos
+## 🔒 Data Isolation
 
-### ✅ **Lo que funciona:**
+### ✅ **What works:**
 
-1. **Usuarios de Acme solo ven assets de Acme**
-2. **Usuarios de Tech Startup solo ven assets de Tech Startup**
-3. **Tickets creados quedan aislados por organización**
-4. **Admins solo ven tickets de su propia organización**
+1. **Acme users only see Acme assets**
+2. **Tech Startup users only see Tech Startup assets**
+3. **Created tickets remain isolated by organization**
+4. **Admins only see tickets from their own organization**
 
-### 🧪 **Prueba de Aislamiento:**
+### 🧪 **Isolation Test:**
 
-**Paso 1:** Login como `admin@acme.com`
-- Verás 3 assets (MacBook, Dell XPS, iPhone)
-- Crea un ticket
+**Step 1:** Login as `admin@acme.com`
+- You'll see 3 assets (MacBook, Dell XPS, iPhone)
+- Create a ticket
 
-**Paso 2:** Logout y login como `admin@techstartup.com`
-- Verás 2 assets DIFERENTES (iPad, Monitor)
-- NO verás el ticket creado por Acme
-- Los datos están completamente aislados ✅
-
----
-
-## 🏗️ Arquitectura Multi-Tenancy
-
-Este es un **Shared Database, Shared Schema** approach:
-- Todas las organizaciones comparten la misma base de datos
-- Todas las organizaciones comparten las mismas tablas
-- El aislamiento se logra mediante `organizationId` en cada query
-
-**Ventajas:**
-- ✅ Simple de implementar
-- ✅ Eficiente en costos
-- ✅ Fácil de mantener
-
-**Limitaciones actuales:**
-- ⚠️ El registro asigna automáticamente a la primera organización
-- ⚠️ No hay creación de organizaciones desde el frontend
-- ⚠️ No hay invitaciones de usuarios
+**Step 2:** Logout and login as `admin@techstartup.com`
+- You'll see 2 DIFFERENT assets (iPad, Monitor)
+- You WON'T see the ticket created by Acme
+- Data is completely isolated ✅
 
 ---
 
-## 🚀 Próximos Pasos para SaaS Completo
+## 🏗️ Multi-Tenancy Architecture
 
-### 1. **Sistema de Invitaciones**
+This is a **Shared Database, Shared Schema** approach:
+- All organizations share the same database
+- All organizations share the same tables
+- Isolation is achieved through `organizationId` in each query
+
+**Advantages:**
+- ✅ Simple to implement
+- ✅ Cost efficient
+- ✅ Easy to maintain
+
+**Current Limitations:**
+- ⚠️ Registration automatically assigns to first organization
+- ⚠️ No organization creation from frontend
+- ⚠️ No user invitations
+
+---
+
+## 🚀 Next Steps for Complete SaaS
+
+### 1. **Invitation System**
 ```
-- Usuario admin puede invitar a otros por email
-- Token de invitación único
-- Auto-asignación a la organización del invitador
+- Admin users can invite others by email
+- Unique invitation token
+- Auto-assignment to inviter's organization
 ```
 
-### 2. **Creación de Organizaciones**
+### 2. **Organization Creation**
 ```
-- Flujo de registro: Crear cuenta → Crear organización
-- Primer usuario se vuelve admin automáticamente
-```
-
-### 3. **Planes y Límites**
-```
-- Free: 1 organización, 5 assets, 2 usuarios
-- Pro: 10 assets, 10 usuarios
-- Enterprise: Ilimitado
+- Registration flow: Create account → Create organization
+- First user automatically becomes admin
 ```
 
-### 4. **Subdominios o Paths**
+### 3. **Plans and Limits**
+```
+- Free: 1 organization, 5 assets, 2 users
+- Pro: 10 assets, 10 users
+- Enterprise: Unlimited
+```
+
+### 4. **Subdomains or Paths**
 ```
 - acme.assetflow.com
 - techstartup.assetflow.com
-O
+OR
 - assetflow.com/acme
 - assetflow.com/techstartup
 ```
 
 ---
 
-## 📝 Código Clave
+## 📝 Key Code
 
-### Middleware de Organización
+### Organization Middleware
 ```javascript
 const attachOrganization = (req, res, next) => {
   if (req.user && req.user.organizationId) {
@@ -164,12 +164,12 @@ const attachOrganization = (req, res, next) => {
 };
 ```
 
-### Query con Filtrado
+### Query with Filtering
 ```javascript
 app.get('/api/assets', authenticateToken, attachOrganization, requireOrganization, async (req, res) => {
   const assets = await prisma.asset.findMany({
     where: {
-      organizationId: req.organizationId  // ← Filtro automático
+      organizationId: req.organizationId  // ← Automatic filter
     }
   });
   res.json(assets);
@@ -178,28 +178,28 @@ app.get('/api/assets', authenticateToken, attachOrganization, requireOrganizatio
 
 ---
 
-## 🎯 Beneficios para Reclutadores
+## 🎯 Benefits for Recruiters
 
-Esta implementación demuestra:
-- ✅ **Arquitectura SaaS real** con multi-tenancy
-- ✅ **Data isolation** entre organizaciones
-- ✅ **Seguridad a nivel de middleware**
-- ✅ **Escalabilidad** para múltiples clientes
-- ✅ **Best practices** en diseño de bases de datos relacionales
-- ✅ **Prisma ORM** con relaciones complejas
+This implementation demonstrates:
+- ✅ **Real SaaS architecture** with multi-tenancy
+- ✅ **Data isolation** between organizations
+- ✅ **Security at middleware level**
+- ✅ **Scalability** for multiple clients
+- ✅ **Best practices** in relational database design
+- ✅ **Prisma ORM** with complex relationships
 
 ---
 
 ## 🐛 Debugging
 
-Si un usuario ve datos de otra organización:
-1. Verifica que `attachOrganization` esté en la ruta
-2. Verifica que el query incluya `organizationId`
-3. Revisa el JWT token con jwt.io - debe incluir `organizationId`
+If a user sees data from another organization:
+1. Verify `attachOrganization` is in the route
+2. Verify query includes `organizationId`
+3. Check JWT token with jwt.io - must include `organizationId`
 
 ---
 
-## 📚 Recursos
+## 📚 Resources
 
 - [Multi-Tenancy Patterns](https://docs.microsoft.com/en-us/azure/architecture/patterns/multi-tenancy)
 - [Prisma Multi-Tenancy](https://www.prisma.io/docs/guides/database/multi-tenancy)

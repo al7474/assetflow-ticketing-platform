@@ -7,6 +7,7 @@ const { attachOrganization, requireOrganization } = require('./middleware/organi
 const { checkSubscriptionLimits } = require('./middleware/subscription');
 const { hashPassword, comparePassword, generateToken } = require('./utils/auth');
 const { stripe, PLANS } = require('./config/stripe');
+const { sendWelcomeEmail, sendTicketNotification, sendSubscriptionEmail } = require('./utils/email');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -34,6 +35,105 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// CRITICAL: Stripe webhook MUST be before express.json() to receive raw body
+app.post('/api/subscription/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const organizationId = parseInt(session.metadata.organizationId);
+        const tier = session.metadata.tier;
+
+        const organization = await prisma.organization.update({
+          where: { id: organizationId },
+          data: {
+            subscriptionTier: tier,
+            stripeSubscriptionId: session.subscription,
+            subscriptionStatus: 'active',
+            currentPeriodEnd: new Date(session.current_period_end * 1000)
+          },
+          include: {
+            users: {
+              where: { role: 'ADMIN' },
+              take: 1
+            }
+          }
+        });
+
+        // Send confirmation email to admin
+        if (organization.users[0]) {
+          await sendSubscriptionEmail(
+            organization.users[0].email,
+            organization.users[0].name,
+            tier,
+            'active'
+          );
+        }
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const organization = await prisma.organization.findFirst({
+          where: { stripeSubscriptionId: subscription.id }
+        });
+
+        if (organization) {
+          await prisma.organization.update({
+            where: { id: organization.id },
+            data: {
+              subscriptionStatus: subscription.status,
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+            }
+          });
+        }
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        const organization = await prisma.organization.findFirst({
+          where: { stripeSubscriptionId: subscription.id }
+        });
+
+        if (organization) {
+          await prisma.organization.update({
+            where: { id: organization.id },
+            data: {
+              subscriptionTier: 'FREE',
+              subscriptionStatus: 'canceled',
+              stripeSubscriptionId: null,
+              currentPeriodEnd: null
+            }
+          });
+        }
+        break;
+      }
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook handling error:', error);
+    res.status(500).json({ error: 'Webhook handler failed' });
+  }
+});
+
+// Now apply JSON parsing to all other routes
 app.use(express.json());
 
 // ==================== AUTH ROUTES ====================
@@ -64,23 +164,31 @@ app.post('/api/auth/register', async (req, res) => {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // For now, assign to a default organization (will be improved later)
-    // In production, this should come from invitation or signup flow
-    const defaultOrg = await prisma.organization.findFirst();
-    if (!defaultOrg) {
-      return res.status(500).json({ error: 'No organization available. Contact administrator.' });
-    }
+    // Create a new organization for this user (secure approach)
+    // Generate a slug from company name or email domain
+    const emailDomain = email.split('@')[1].split('.')[0];
+    const orgSlug = `${emailDomain}-${Date.now()}`;
 
-    // Create user
+    const newOrg = await prisma.organization.create({
+      data: {
+        name: `${name}'s Organization`,
+        slug: orgSlug
+      }
+    });
+
+    // Create user as ADMIN of their new organization
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: role || 'EMPLOYEE', // Default to EMPLOYEE if not specified
-        organizationId: defaultOrg.id
+        role: 'ADMIN', // First user is always admin
+        organizationId: newOrg.id
       }
     });
+
+    // Send welcome email
+    await sendWelcomeEmail(email, name, newOrg.name);
 
     // Generate token
     const token = generateToken(newUser);
@@ -190,55 +298,168 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Invite user to organization (Admin only with limit checks)
+app.post('/api/auth/invite', 
+  authenticateToken, 
+  requireAdmin, 
+  attachOrganization, 
+  requireOrganization,
+  checkSubscriptionLimits('user'),
+  async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+
+      // Validate input
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required.' });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+      }
+
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ error: 'User with this email already exists.' });
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      // Get organization info for welcome email
+      const organization = await prisma.organization.findUnique({
+        where: { id: req.organizationId }
+      });
+
+      // Create user as EMPLOYEE in the organization
+      const newUser = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role: 'EMPLOYEE',
+          organizationId: req.organizationId
+        }
+      });
+
+      // Send welcome email
+      await sendWelcomeEmail(email, name, organization.name);
+
+      res.status(201).json({
+        message: 'User invited successfully',
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role
+        }
+      });
+    } catch (error) {
+      console.error('Invite user error:', error);
+      res.status(500).json({ error: 'Internal server error during user invitation.' });
+    }
+  }
+);
+
 // ==================== ASSET ROUTES ====================
 
 // ==================== ASSET ROUTES ====================
 
 // 1. Get all assets (protected, filtered by organization)
 app.get('/api/assets', authenticateToken, attachOrganization, requireOrganization, async (req, res) => {
-  const assets = await prisma.asset.findMany({
-    where: {
-      organizationId: req.organizationId
-    }
-  });
-  res.json(assets);
+  try {
+    const assets = await prisma.asset.findMany({
+      where: {
+        organizationId: req.organizationId
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+    res.json(assets);
+  } catch (error) {
+    console.error('Fetch assets error:', error);
+    res.status(500).json({ error: 'Failed to fetch assets' });
+  }
 });
 
 // 2. Create a Ticket (WITH BUSINESS LOGIC) - protected, org-scoped
 app.post('/api/tickets', authenticateToken, attachOrganization, requireOrganization, checkSubscriptionLimits('ticket'), async (req, res) => {
-  const { description, assetId } = req.body;
+  try {
+    const { description, assetId } = req.body;
 
-  // Business Logic: Check if there's already an open ticket for this asset IN THIS ORG
-  const existingTicket = await prisma.ticket.findFirst({
-    where: {
-      assetId: parseInt(assetId),
-      organizationId: req.organizationId,
-      status: 'OPEN'
+    // Validate input
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'Description is required' });
     }
-  });
 
-  if (existingTicket) {
-    return res.status(400).json({ 
-      error: 'This asset already has an active failure report.' 
+    if (!assetId) {
+      return res.status(400).json({ error: 'Asset ID is required' });
+    }
+
+    const parsedAssetId = parseInt(assetId);
+    if (isNaN(parsedAssetId)) {
+      return res.status(400).json({ error: 'Invalid asset ID' });
+    }
+
+    // Business Logic: Check if there's already an open ticket for this asset IN THIS ORG
+    const existingTicket = await prisma.ticket.findFirst({
+      where: {
+        assetId: parsedAssetId,
+        organizationId: req.organizationId,
+        status: 'OPEN'
+      }
     });
-  }
 
-  // Get asset info for title
-  const asset = await prisma.asset.findUnique({
-    where: { id: parseInt(assetId) }
-  });
-
-  const newTicket = await prisma.ticket.create({
-    data: {
-      title: `Issue with ${asset?.name || 'Asset'}`,
-      description,
-      userId: req.user.id,
-      assetId: parseInt(assetId),
-      organizationId: req.organizationId
+    if (existingTicket) {
+      return res.status(400).json({ 
+        error: 'This asset already has an active failure report.' 
+      });
     }
-  });
 
-  res.json(newTicket);
+    // Get asset info for title and verify it belongs to org
+    const asset = await prisma.asset.findFirst({
+      where: { 
+        id: parsedAssetId,
+        organizationId: req.organizationId
+      }
+    });
+
+    if (!asset) {
+      return res.status(404).json({ error: 'Asset not found or access denied' });
+    }
+
+    const newTicket = await prisma.ticket.create({
+      data: {
+        title: `Issue with ${asset.name}`,
+        description: description.trim(),
+        userId: req.user.id,
+        assetId: parsedAssetId,
+        organizationId: req.organizationId
+      },
+      include: {
+        user: true,
+        asset: true
+      }
+    });
+
+    // Send email notification to admins
+    await sendTicketNotification(
+      req.organizationId,
+      newTicket,
+      newTicket.asset,
+      newTicket.user
+    );
+
+    res.json(newTicket);
+  } catch (error) {
+    console.error('Create ticket error:', error);
+    res.status(500).json({ error: 'Failed to create ticket' });
+  }
 });
 
 // 3. Get all tickets (Admin view) - requires admin role, org-scoped
@@ -272,21 +493,44 @@ app.get('/api/tickets', authenticateToken, requireAdmin, attachOrganization, req
 });
 
 // 4. Close/Resolve a ticket - requires admin role
-app.patch('/api/tickets/:id/close', authenticateToken, requireAdmin, async (req, res) => {
-  const { id } = req.params;
-
+app.patch('/api/tickets/:id/close', authenticateToken, requireAdmin, attachOrganization, requireOrganization, async (req, res) => {
   try {
+    const { id } = req.params;
+    const ticketId = parseInt(id);
+
+    if (isNaN(ticketId)) {
+      return res.status(400).json({ error: 'Invalid ticket ID' });
+    }
+
+    // Verify ticket belongs to organization
+    const ticket = await prisma.ticket.findFirst({
+      where: {
+        id: ticketId,
+        organizationId: req.organizationId
+      }
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found or access denied' });
+    }
+
+    if (ticket.status === 'CLOSED') {
+      return res.status(400).json({ error: 'Ticket is already closed' });
+    }
+
     const updatedTicket = await prisma.ticket.update({
-      where: { id: parseInt(id) },
+      where: { id: ticketId },
       data: { status: 'CLOSED' },
       include: {
         user: true,
         asset: true
       }
     });
+
     res.json(updatedTicket);
   } catch (error) {
-    res.status(404).json({ error: 'Ticket not found' });
+    console.error('Close ticket error:', error);
+    res.status(500).json({ error: 'Failed to close ticket' });
   }
 });
 
@@ -441,8 +685,12 @@ app.post('/api/subscription/create-checkout', authenticateToken, attachOrganizat
     const { tier } = req.body;
     const organizationId = req.user.organizationId;
 
+    if (!tier) {
+      return res.status(400).json({ error: 'Subscription tier is required' });
+    }
+
     if (!['PRO', 'ENTERPRISE'].includes(tier)) {
-      return res.status(400).json({ error: 'Invalid subscription tier' });
+      return res.status(400).json({ error: 'Invalid subscription tier. Choose PRO or ENTERPRISE.' });
     }
 
     const organization = await prisma.organization.findUnique({
@@ -451,6 +699,11 @@ app.post('/api/subscription/create-checkout', authenticateToken, attachOrganizat
 
     if (!organization) {
       return res.status(404).json({ error: 'Organization not found' });
+    }
+
+    // Prevent downgrade or same tier purchase
+    if (organization.subscriptionTier === tier) {
+      return res.status(400).json({ error: 'You are already on this plan' });
     }
 
     const plan = PLANS[tier];
@@ -498,87 +751,6 @@ app.post('/api/subscription/create-checkout', authenticateToken, attachOrganizat
   } catch (error) {
     console.error('Checkout error:', error);
     res.status(500).json({ error: 'Failed to create checkout session' });
-  }
-});
-
-// Stripe webhook handler
-app.post('/api/subscription/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const organizationId = parseInt(session.metadata.organizationId);
-        const tier = session.metadata.tier;
-
-        await prisma.organization.update({
-          where: { id: organizationId },
-          data: {
-            subscriptionTier: tier,
-            stripeSubscriptionId: session.subscription,
-            subscriptionStatus: 'active',
-            currentPeriodEnd: new Date(session.created * 1000 + 30 * 24 * 60 * 60 * 1000) // ~30 days
-          }
-        });
-        break;
-      }
-
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object;
-        const organization = await prisma.organization.findFirst({
-          where: { stripeSubscriptionId: subscription.id }
-        });
-
-        if (organization) {
-          await prisma.organization.update({
-            where: { id: organization.id },
-            data: {
-              subscriptionStatus: subscription.status,
-              currentPeriodEnd: new Date(subscription.current_period_end * 1000)
-            }
-          });
-        }
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        const organization = await prisma.organization.findFirst({
-          where: { stripeSubscriptionId: subscription.id }
-        });
-
-        if (organization) {
-          await prisma.organization.update({
-            where: { id: organization.id },
-            data: {
-              subscriptionTier: 'FREE',
-              subscriptionStatus: 'canceled',
-              stripeSubscriptionId: null,
-              currentPeriodEnd: null
-            }
-          });
-        }
-        break;
-      }
-    }
-
-    res.json({ received: true });
-  } catch (error) {
-    console.error('Webhook handling error:', error);
-    res.status(500).json({ error: 'Webhook handler failed' });
   }
 });
 
