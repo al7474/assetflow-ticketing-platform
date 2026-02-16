@@ -150,23 +150,23 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-gray-900 dark:to-gray-800 py-8 px-4 transition-colors duration-200">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-gray-900 dark:to-gray-800 py-4 sm:py-6 md:py-8 px-2 sm:px-4 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
         {/* Header with user info and logout */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 text-white">
               🖥️ AssetFlow
             </h1>
-            <p className="text-white/90 text-lg">
+            <p className="text-white/90 text-base sm:text-lg break-words max-w-xs sm:max-w-none">
               {organization?.name} - {user.name} {isAdmin && '(Admin)'}
             </p>
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-2 sm:gap-3 items-center">
             <ThemeToggle />
             <button 
               onClick={logout}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 text-white rounded-lg transition"
+              className="px-3 py-2 sm:px-4 sm:py-2 bg-white/20 hover:bg-white/30 dark:bg-gray-800/50 dark:hover:bg-gray-700/50 text-white rounded-lg transition text-sm sm:text-base"
             >
               Logout
             </button>
@@ -174,10 +174,10 @@ function App() {
         </div>
 
         {/* View Toggle */}
-        <div className="flex gap-4 justify-center mb-8 flex-wrap">
+        <div className="flex gap-2 sm:gap-4 justify-center mb-6 sm:mb-8 flex-wrap">
           {isAdmin && (
             <button 
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
                 viewMode === 'dashboard' 
                   ? 'bg-white dark:bg-gray-700 border-2 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400' 
                   : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:-translate-y-0.5'
@@ -188,7 +188,7 @@ function App() {
             </button>
           )}
           <button 
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
               viewMode === 'assets' 
                 ? 'bg-white dark:bg-gray-700 border-2 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400' 
                 : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:-translate-y-0.5'
@@ -199,7 +199,7 @@ function App() {
           </button>
           {isAdmin && (
             <button 
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
                 viewMode === 'tickets' 
                   ? 'bg-white dark:bg-gray-700 border-2 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400' 
                   : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:-translate-y-0.5'
@@ -210,7 +210,7 @@ function App() {
             </button>
           )}
           <button 
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
               viewMode === 'pricing' 
                 ? 'bg-white dark:bg-gray-700 border-2 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400' 
                 : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:-translate-y-0.5'
@@ -220,7 +220,7 @@ function App() {
             💎 Pricing
           </button>
           <button 
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+            className={`px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-semibold transition-all text-sm sm:text-base ${
               viewMode === 'billing' 
                 ? 'bg-white dark:bg-gray-700 border-2 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400' 
                 : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:-translate-y-0.5'
@@ -248,10 +248,10 @@ function App() {
 
         {/* Assets View */}
         {viewMode === 'assets' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {assets.map((asset) => (
-              <div key={asset.id} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-100 dark:border-gray-700 hover:-translate-y-1 hover:shadow-xl transition-all">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{asset.name}</h3>
+              <div key={asset.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700 hover:-translate-y-1 hover:shadow-xl transition-all">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 break-words">{asset.name}</h3>
                 <p className="text-gray-700 dark:text-gray-100 mb-2">
                   <strong className="text-gray-900 dark:text-white">Serial:</strong> {asset.serialNumber}
                 </p>
@@ -266,7 +266,7 @@ function App() {
                   {asset.status}
                 </span>
                 <button 
-                  className="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-blue-500 dark:to-indigo-600 text-white font-bold rounded-lg hover:opacity-90 hover:shadow-xl hover:scale-[1.02] transition-all mt-2 shadow-lg"
+                  className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-blue-500 dark:to-indigo-600 text-white font-bold rounded-lg hover:opacity-90 hover:shadow-xl hover:scale-[1.02] transition-all mt-2 shadow-lg text-sm sm:text-base"
                   onClick={() => handleReportClick(asset)}
                 >
                   📋 Report Failure
@@ -309,7 +309,7 @@ function App() {
 
                     {ticket.status === 'OPEN' && (
                       <button 
-                        className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 text-white font-semibold rounded-lg hover:opacity-90 hover:shadow-lg transition-all"
+                        className="w-full mt-4 px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 text-white font-semibold rounded-lg hover:opacity-90 hover:shadow-lg transition-all text-sm sm:text-base"
                         onClick={() => handleCloseTicket(ticket.id)}
                       >
                         ✓ Close Ticket
@@ -323,8 +323,8 @@ function App() {
         )}
 
         {showModal && (
-          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-lg w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4" onClick={handleCloseModal}>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-8 max-w-lg w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Report Failure</h2>
               <p className="text-gray-600 dark:text-gray-100 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <strong className="text-gray-900 dark:text-white">Equipment:</strong> {selectedAsset.name} ({selectedAsset.serialNumber})
@@ -338,25 +338,25 @@ function App() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="E.g., Screen not turning on, keyboard not working..."
-                    rows="5"
+                    rows="4"
                     required
                     disabled={submitting}
-                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-lg focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none resize-vertical disabled:bg-gray-100 dark:disabled:bg-gray-600"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 border-2 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-lg focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none resize-vertical disabled:bg-gray-100 dark:disabled:bg-gray-600 text-sm sm:text-base"
                   />
                 </div>
 
-                <div className="flex gap-4 justify-end">
+                <div className="flex gap-2 sm:gap-4 justify-end flex-wrap">
                   <button 
                     type="button" 
                     onClick={handleCloseModal}
-                    className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-4 py-2 sm:px-6 sm:py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm sm:text-base"
                     disabled={submitting}
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit" 
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-blue-500 dark:to-indigo-600 text-white font-bold rounded-lg hover:opacity-90 hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg"
+                    className="px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-blue-500 dark:to-indigo-600 text-white font-bold rounded-lg hover:opacity-90 hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg text-sm sm:text-base"
                     disabled={submitting}
                   >
                     {submitting ? 'Submitting...' : 'Submit Report'}
