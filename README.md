@@ -9,7 +9,7 @@ Companies lose time and money due to manual asset management and failure reporti
 <p align="center">
    <img src="docs/dashboard-light.png" width="300"/>
    <img src="docs/dashboard-dark.png" width="300"/>
-   <img src="docs/mobile-view.png" width="200"/>
+
 </p>
 
 ## 🚀 Why AssetFlow?
