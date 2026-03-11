@@ -48,11 +48,11 @@ app.post(
 app.use(express.json());
 
 // Register API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/assets', assetRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/subscription', subscriptionRoutes);
+app.use('/auth', authRoutes);
+app.use('/assets', assetRoutes);
+app.use('/tickets', ticketRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/subscription', subscriptionRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
