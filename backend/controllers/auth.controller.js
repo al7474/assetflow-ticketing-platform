@@ -34,13 +34,13 @@ class AuthController {
       );
 
       // Create user as ADMIN
-      const newUser = await authService.createUser({
-        name,
-        email,
-        password: hashedPassword,
-        role: 'ADMIN',
-        organizationId: newOrg.id
-      });
+        const newUser = await authService.createUser({
+          name,
+          email,
+          password: hashedPassword,
+          role: 'EMPLOYEE',
+          organizationId: newOrg.id
+        });
 
       // Send welcome email
       await sendWelcomeEmail(email, name, newOrg.name);
