@@ -18,3 +18,11 @@ router.get(
 );
 
 module.exports = router;
+// Create asset (organization-scoped)
+router.post(
+  '/',
+  authenticateToken,
+  attachOrganization,
+  requireOrganization,
+  assetController.createAsset
+);

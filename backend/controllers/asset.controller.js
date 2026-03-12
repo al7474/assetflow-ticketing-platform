@@ -18,6 +18,32 @@ class AssetController {
       res.status(500).json({ error: 'Failed to fetch assets' });
     }
   }
+
+  /**
+   * Create a new asset for organization
+   */
+  async createAsset(req, res) {
+    try {
+      const { name, serialNumber, type } = req.body;
+      if (!name || !serialNumber || !type) {
+        return res.status(400).json({ error: 'Name, serialNumber, and type are required.' });
+      }
+      const asset = await assetService.createAsset({
+        name,
+        serialNumber,
+        type,
+        organizationId: req.organizationId
+      });
+      res.status(201).json(asset);
+    } catch (error) {
+      console.error('Create asset error:', error);
+      if (error.code === 'P2002') {
+        // Prisma unique constraint failed
+        return res.status(409).json({ error: 'Asset with this serial number already exists.' });
+      }
+      res.status(500).json({ error: 'Failed to create asset' });
+    }
+  }
 }
 
 module.exports = new AssetController();

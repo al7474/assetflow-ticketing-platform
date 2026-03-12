@@ -18,6 +18,20 @@ class AssetService {
   }
 
   /**
+   * Create a new asset for organization
+   */
+  async createAsset({ name, serialNumber, type, organizationId }) {
+    return await prisma.asset.create({
+      data: {
+        name,
+        serialNumber,
+        type,
+        organizationId
+      }
+    });
+  }
+
+  /**
    * Get asset by ID and organization
    */
   async getAssetById(id, organizationId) {
