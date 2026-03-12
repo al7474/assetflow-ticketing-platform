@@ -12,8 +12,7 @@ You can try the main AssetFlow workflow with the demo user:
 1. Log in with the demo user.
 2. Explore the dashboard, create and manage tickets and assets.
 3. Switch between light/dark mode and experience multi-tenancy.
-
-> If you have a deployed URL, add it here:  
+ 
 > [Online Demo](https://assetflow-ticketing-platform-zay4.vercel.app/)
 
 ## 📸 Screenshots
