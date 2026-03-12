@@ -25,8 +25,6 @@ You can try the main AssetFlow workflow with the demo user:
 - Modern dashboard (light and dark mode)
 - Responsive design for desktop and mobile
 
-> You can add a GIF or short video here to showcase the main workflow.
-
 ## ✨ Key Features
 
 - JWT authentication and role management (Admin/Employee)
