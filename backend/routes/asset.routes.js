@@ -26,3 +26,12 @@ router.post(
   requireOrganization,
   assetController.createAsset
 );
+
+// Delete asset (organization-scoped)
+router.delete(
+  '/:id',
+  authenticateToken,
+  attachOrganization,
+  requireOrganization,
+  assetController.deleteAsset
+);

@@ -61,6 +61,18 @@ class AssetService {
       select: { id: true, name: true }
     });
   }
+
+  /**
+   * Delete asset by ID (prevent if tickets exist)
+   */
+  async deleteAsset(id) {
+    // Check for related tickets
+    const ticketCount = await prisma.ticket.count({ where: { assetId: id } });
+    if (ticketCount > 0) {
+      throw new Error('Cannot delete asset with related tickets');
+    }
+    return await prisma.asset.delete({ where: { id } });
+  }
 }
 
 module.exports = new AssetService();

@@ -26,6 +26,22 @@ export default function AssetList({ user, isAdmin }) {
     }
   };
 
+  const handleDeleteAsset = async (assetId) => {
+    if (!window.confirm('Are you sure you want to delete this asset?')) return;
+    try {
+      await apiClient.delete(`/assets/${assetId}`);
+      alert('Asset deleted successfully!');
+      fetchAssets();
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.error === 'Cannot delete asset: tickets exist for this asset.') {
+        alert('Cannot delete asset: tickets exist for this asset. Please delete all related tickets first.');
+      } else {
+        alert('Failed to delete asset.');
+      }
+      console.error('Error deleting asset:', err);
+    }
+  };
+
   if (loading) return <div className="text-center text-lg text-gray-600 dark:text-gray-100 py-8">Loading assets...</div>;
   if (error) return <div className="text-center text-red-500 dark:text-red-300 py-8">{error}</div>;
 
@@ -56,7 +72,14 @@ export default function AssetList({ user, isAdmin }) {
             }`}>
               {asset.status}
             </span>
-            {/* Add more asset actions here if needed */}
+            <div className="flex gap-2 mt-4">
+              <button
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-red-500 to-pink-500 dark:from-red-600 dark:to-pink-600 text-white font-semibold rounded-lg hover:opacity-90 hover:shadow-lg transition-all text-sm sm:text-base"
+                onClick={() => handleDeleteAsset(asset.id)}
+              >
+                🗑 Delete Asset
+              </button>
+            </div>
           </div>
         ))}
       </div>

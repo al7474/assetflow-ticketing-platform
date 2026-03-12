@@ -71,6 +71,25 @@ class TicketController {
   }
 
   /**
+   * Delete ticket (Admin only)
+   */
+  async deleteTicket(req, res) {
+    try {
+      const { ticketId } = req.params;
+      // Verify ticket belongs to organization
+      const ticket = await ticketService.getTicketById(ticketId, req.organizationId);
+      if (!ticket) {
+        return res.status(404).json({ error: 'Ticket not found or access denied' });
+      }
+      await ticketService.deleteTicket(ticketId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete ticket error:', error);
+      res.status(500).json({ error: 'Failed to delete ticket' });
+    }
+  }
+
+  /**
    * Close ticket (Admin only)
    */
   async closeTicket(req, res) {

@@ -42,4 +42,15 @@ router.patch(
   ticketController.closeTicket
 );
 
+// Delete ticket (admin only)
+router.delete(
+  '/:id',
+  authenticateToken,
+  requireAdmin,
+  attachOrganization,
+  requireOrganization,
+  validateTicketId,
+  ticketController.deleteTicket
+);
+
 module.exports = router;

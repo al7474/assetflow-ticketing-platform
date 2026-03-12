@@ -12,6 +12,7 @@ const TicketList = () => {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const fetchTickets = async () => {
     try {
@@ -44,6 +45,18 @@ const TicketList = () => {
     } catch (err) {
       alert('Failed to close ticket.');
       console.error('Error closing ticket:', err);
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    if (!window.confirm('Are you sure you want to delete this ticket?')) return;
+    try {
+      await apiClient.delete(`/tickets/${ticketId}`);
+      alert('Ticket deleted successfully!');
+      fetchTickets();
+    } catch (err) {
+      alert('Failed to delete ticket.');
+      console.error('Error deleting ticket:', err);
     }
   };
 
@@ -137,14 +150,22 @@ const TicketList = () => {
                 <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Description:</strong></p>
                 <p className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg italic text-gray-600 dark:text-gray-200 mt-2">{ticket.description}</p>
               </div>
-              {ticket.status === 'OPEN' && (
+              <div className="flex gap-2 mt-4">
+                {ticket.status === 'OPEN' && (
+                  <button
+                    className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 text-white font-semibold rounded-lg hover:opacity-90 hover:shadow-lg transition-all text-sm sm:text-base"
+                    onClick={() => handleCloseTicket(ticket.id)}
+                  >
+                    ✓ Close Ticket
+                  </button>
+                )}
                 <button
-                  className="w-full mt-4 px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-green-500 to-teal-500 dark:from-green-600 dark:to-teal-600 text-white font-semibold rounded-lg hover:opacity-90 hover:shadow-lg transition-all text-sm sm:text-base"
-                  onClick={() => handleCloseTicket(ticket.id)}
+                  className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-red-500 to-pink-500 dark:from-red-600 dark:to-pink-600 text-white font-semibold rounded-lg hover:opacity-90 hover:shadow-lg transition-all text-sm sm:text-base"
+                  onClick={() => handleDeleteTicket(ticket.id)}
                 >
-                  ✓ Close Ticket
+                  🗑 Delete Ticket
                 </button>
-              )}
+              </div>
             </div>
           ))
         )}

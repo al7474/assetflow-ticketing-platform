@@ -125,6 +125,15 @@ class TicketService {
       _count: { id: true }
     });
   }
+
+  /**
+   * Delete ticket by ID
+   */
+  async deleteTicket(id) {
+    return await prisma.ticket.delete({
+      where: { id }
+    });
+  }
 }
 
 module.exports = new TicketService();

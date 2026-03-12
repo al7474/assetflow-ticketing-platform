@@ -44,6 +44,28 @@ class AssetController {
       res.status(500).json({ error: 'Failed to create asset' });
     }
   }
+
+  /**
+   * Delete asset by ID (organization-scoped)
+   */
+  async deleteAsset(req, res) {
+    try {
+      const id = Number(req.params.id);
+      // Verify asset belongs to organization
+      const asset = await assetService.getAssetById(id, req.organizationId);
+      if (!asset) {
+        return res.status(404).json({ error: 'Asset not found or access denied' });
+      }
+      await assetService.deleteAsset(id);
+      res.json({ success: true });
+    } catch (error) {
+      if (error.message === 'Cannot delete asset with related tickets') {
+        return res.status(400).json({ error: 'Cannot delete asset: tickets exist for this asset.' });
+      }
+      console.error('Delete asset error:', error);
+      res.status(500).json({ error: 'Failed to delete asset' });
+    }
+  }
 }
 
 module.exports = new AssetController();
