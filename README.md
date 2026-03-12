@@ -1,71 +1,80 @@
 # AssetFlow Ticketing Platform
 
-## 🚩 Problem
+Automates asset and ticket management for companies, centralizing information and improving traceability. Designed for modern teams seeking efficiency, clear visualization, and multi-tenancy.
 
-Companies lose time and money due to manual asset management and failure reporting. AssetFlow automates this process, centralizes information, and improves traceability.
+## 🚀 Quick Demo
+
+You can try the main AssetFlow workflow with the demo user:
+
+- **User:** demo@demo.com  
+- **Password:** demo123
+
+1. Log in with the demo user.
+2. Explore the dashboard, create and manage tickets and assets.
+3. Switch between light/dark mode and experience multi-tenancy.
+
+> If you have a deployed URL, add it here:  
+> [Online Demo](https://assetflow-ticketing-platform.vercel.app)
 
 ## 📸 Screenshots
 
 <p align="center">
-   <img src="docs/dashboard-light.png" width="300"/>
-   <img src="docs/dashboard-dark.png" width="300"/>
-
+	<img src="docs/dashboard-light.png" width="300"/>
+	<img src="docs/dashboard-dark.png" width="300"/>
 </p>
 
-## 🚀 Why AssetFlow?
+- Modern dashboard (light and dark mode)
+- Responsive design for desktop and mobile
 
-- Automates asset and ticket management
-- Modern and visual dashboard
-- Multi-tenant: each company sees only its own data
-- Responsive UI with dark mode
-- Demo mode for portfolio and testing (no payment required)
-
-## ⚡ Tech Stack
-
-React · Vite · Tailwind CSS · Node.js · Express · Prisma · PostgreSQL
+> You can add a GIF or short video here to showcase the main workflow.
 
 ## ✨ Key Features
 
-- JWT authentication and roles (Admin/Employee)
+- JWT authentication and role management (Admin/Employee)
 - Asset and ticket management
-- Subscriptions (FREE, PRO, ENTERPRISE)
+- Multi-tenancy: each company sees only its own data
+- Subscription plans (FREE, PRO, ENTERPRISE)
 - Email notifications
-- Demo mode for portfolio
+- Demo mode for portfolio and testing
+- Responsive UI with light/dark mode
 
-## 🚦 Quick Start
+## ⚡ Tech Stack
+
+- React
+- Vite
+- Tailwind CSS
+- Node.js
+- Express
+- Prisma
+- PostgreSQL
+
+## 🚦 Installation & Usage
+
+Clone the repository and start both backend and frontend:
 
 ```bash
 git clone https://github.com/al7474/assetflow-ticketing-platform.git
 cd assetflow-ticketing-platform
-cd backend && npm install && npm run dev
-# In another terminal:
-cd ../frontend && npm install && npm run dev
+
+# Start backend
+cd backend
+npm install
+npm run dev
+
+# In another terminal, start frontend
+cd ../frontend
+npm install
+npm run dev
 ```
 
-## 📚 More Information & Documentation
+> The demo user is available after setup.  
+> For more details, see the documentation in the `docs/` folder.
+
+## 📚 Documentation
 
 - [Authentication Guide](docs/AUTH_IMPLEMENTATION.md)
 - [Multi-Tenancy](docs/MULTI_TENANCY.md)
 - [Dark Mode](docs/DARK_MODE.md)
 - [Demo Mode Testing](docs/DEMO_MODE_TESTING.md)
 - [Improvements & Roadmap](docs/IMPROVEMENTS.md)
-- [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md)
-git clone https://github.com/youruser/assetflow-ticketing-platform.git
-cd assetflow-ticketing-platform
-cd backend && npm install && npm run dev
-# In another terminal:
-cd ../frontend && npm install && npm run dev
-```
-
-## 📚 More Information & Documentation
-
-- [Authentication Guide](docs/AUTH_IMPLEMENTATION.md)
-- [Multi-Tenancy](docs/MULTI_TENANCY.md)
-- [Dark Mode](docs/DARK_MODE.md)
-- [Demo Mode Testing](docs/DEMO_MODE_TESTING.md)
-- [Improvements & Roadmap](docs/IMPROVEMENTS.md)
-- [Railway Deployment](docs/RAILWAY_DEPLOYMENT.md)
-
----
-
-npx prisma generate && npx prisma migrate deploy && node index.js
+- [Testing Guide](docs/TESTING_GUIDE.md)
