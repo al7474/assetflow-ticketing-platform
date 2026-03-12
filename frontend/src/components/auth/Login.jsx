@@ -1,35 +1,21 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
-export default function Register({ onSwitchToLogin }) {
-  const [name, setName] = useState('');
+export default function Login({ onSwitchToRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { login } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    // Validation
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
     setLoading(true);
 
-    const result = await register(name, email, password);
+    const result = await login(email, password);
 
     if (!result.success) {
       setError(result.error);
@@ -58,8 +44,8 @@ export default function Register({ onSwitchToLogin }) {
       </button>
       <div className="max-w-md w-full bg-white dark:bg-gray-700 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-600 p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Create Account</h1>
-          <p className="text-gray-600 dark:text-gray-200">Sign up to get started</p>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</h1>
+          <p className="text-gray-600 dark:text-gray-200">Sign in to your account</p>
         </div>
 
         {error && (
@@ -68,22 +54,7 @@ export default function Register({ onSwitchToLogin }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="name" className="block text-sm font-bold text-gray-700 dark:text-gray-50 mb-2">
-              Full Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition"
-              placeholder="John Doe"
-            />
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-bold text-gray-700 dark:text-gray-50 mb-2">
               Email
@@ -114,38 +85,23 @@ export default function Register({ onSwitchToLogin }) {
             />
           </div>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-bold text-gray-700 dark:text-gray-50 mb-2">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-500 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 transition"
-              placeholder="••••••••"
-            />
-          </div>
-
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-blue-500 dark:to-indigo-600 hover:opacity-90 hover:shadow-xl hover:scale-[1.02] text-white font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            {loading ? 'Creating account...' : 'Sign Up'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-gray-600 dark:text-gray-100">
-            Already have an account?{' '}
+            Don't have an account?{' '}
             <button
-              onClick={onSwitchToLogin}
+              onClick={onSwitchToRegister}
               className="text-indigo-600 dark:text-blue-400 hover:text-indigo-700 dark:hover:text-blue-300 font-bold underline"
             >
-              Sign in
+              Sign up
             </button>
           </p>
         </div>

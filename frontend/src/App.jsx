@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from './context/AuthContext';
-import Login from './components/Login';
-import Register from './components/Register';
 import Dashboard from './components/Dashboard';
-import PricingPage from './components/PricingPage';
-import BillingPage from './components/BillingPage';
+import PricingPage from './components/pricing/PricingPage';
+import BillingPage from './components/billing/BillingPage';
 import ThemeToggle from './components/ThemeToggle';
 import { AssetList } from './components/assets';
 import TicketList from './components/tickets';
 import { ReportFailureModal } from './components/common';
-import Header from './components/Header';
-import Navigation from './components/Navigation';
+import { Login, Register } from './components/auth';
+import { Header, Navigation } from './components/nav';
 import './App.css';
 
 function App() {
