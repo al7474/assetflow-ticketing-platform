@@ -14,7 +14,7 @@ You can try the main AssetFlow workflow with the demo user:
 3. Switch between light/dark mode and experience multi-tenancy.
 
 > If you have a deployed URL, add it here:  
-> [Online Demo](https://assetflow-ticketing-platform.vercel.app)
+> [Online Demo](https://assetflow-ticketing-platform-zay4.vercel.app/)
 
 ## 📸 Screenshots
 
@@ -78,3 +78,15 @@ npm run dev
 - [Demo Mode Testing](docs/DEMO_MODE_TESTING.md)
 - [Improvements & Roadmap](docs/IMPROVEMENTS.md)
 - [Testing Guide](docs/TESTING_GUIDE.md)
+
+## 🛣️ Improvements & Roadmap
+
+- Advanced analytics and reporting for assets and tickets
+- Customizable notification settings and channels
+- Integration with external asset management systems (API)
+- Enhanced mobile experience and PWA support
+- Role-based access with more granular permissions
+- Audit logs for actions and changes
+- Bulk import/export for assets and tickets
+- Improved subscription management and billing options
+- More demo scenarios for recruiters and testers
