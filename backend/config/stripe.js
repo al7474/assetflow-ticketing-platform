@@ -1,5 +1,5 @@
-const Stripe = require('stripe');
 
+import Stripe from 'stripe';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
 // Subscription plans with limits
@@ -36,4 +36,5 @@ const PLANS = {
   }
 };
 
-module.exports = { stripe, PLANS };
+
+export { stripe, PLANS };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/authHelpers';
+import { useTheme } from '../../context/themeHelpers';
 
 export default function Register({ onSwitchToLogin }) {
   const [name, setName] = useState('');

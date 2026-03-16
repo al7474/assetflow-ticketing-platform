@@ -3,7 +3,8 @@
  * Database operations for asset-related functionality
  */
 
-const { PrismaClient } = require('@prisma/client');
+
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class AssetService {
@@ -75,4 +76,4 @@ class AssetService {
   }
 }
 
-module.exports = new AssetService();
+export default new AssetService();

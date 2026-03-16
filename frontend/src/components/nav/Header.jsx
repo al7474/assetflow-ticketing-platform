@@ -1,6 +1,7 @@
 import React from 'react';
+import ThemeToggle from '../ThemeToggle';
 
-const Header = ({ organization, user, isAdmin, logout, ThemeToggle }) => (
+const Header = ({ organization, user, isAdmin, logout }) => (
   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
     <div>
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 text-white">

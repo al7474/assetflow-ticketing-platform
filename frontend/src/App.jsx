@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/authHelpers';
 import Dashboard from './components/Dashboard';
 import PricingPage from './components/pricing/PricingPage';
 import BillingPage from './components/billing/BillingPage';
@@ -21,11 +21,7 @@ function App() {
   const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'assets', 'tickets', 'pricing', 'billing'
 
   // Modal handlers for reporting asset failure
-  const handleReportClick = (asset) => {
-    setSelectedAsset(asset);
-    setShowModal(true);
-    setDescription('');
-  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedAsset(null);

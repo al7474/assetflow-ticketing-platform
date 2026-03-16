@@ -3,11 +3,12 @@
  * Business logic for subscription and billing operations
  */
 
-const organizationService = require('../services/organization.service');
-const assetService = require('../services/asset.service');
-const ticketService = require('../services/ticket.service');
-const { stripe, PLANS } = require('../config/stripe');
-const { sendSubscriptionEmail } = require('../utils/email');
+
+import organizationService from '../services/organization.service.js';
+import assetService from '../services/asset.service.js';
+import ticketService from '../services/ticket.service.js';
+import { stripe, PLANS } from '../config/stripe.js';
+import { sendSubscriptionEmail } from '../utils/email.js';
 
 class SubscriptionController {
   /**
@@ -108,6 +109,7 @@ class SubscriptionController {
       }
 
       // Create checkout session
+      /* eslint-disable camelcase */
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         mode: 'subscription',
@@ -125,6 +127,7 @@ class SubscriptionController {
           tier
         }
       });
+      /* eslint-enable camelcase */
 
       res.json({ url: session.url });
     } catch (error) {
@@ -146,10 +149,13 @@ class SubscriptionController {
         return res.status(400).json({ error: 'No active subscription found' });
       }
 
+
+      /* eslint-disable camelcase */
       const session = await stripe.billingPortal.sessions.create({
         customer: organization.stripeCustomerId,
         return_url: `${process.env.FRONTEND_URL}/billing`
       });
+      /* eslint-enable camelcase */
 
       res.json({ url: session.url });
     } catch (error) {
@@ -304,4 +310,4 @@ class SubscriptionController {
   }
 }
 
-module.exports = new SubscriptionController();
+export default new SubscriptionController();

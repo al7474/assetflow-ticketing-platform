@@ -2,13 +2,15 @@
  * Ticket routes
  */
 
-const express = require('express');
+
+import express from 'express';
+import ticketController from '../controllers/ticket.controller.js';
+import { validateCreateTicket, validateTicketId } from '../validators/ticket.validator.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { attachOrganization, requireOrganization } from '../middleware/organization.js';
+import { checkSubscriptionLimits } from '../middleware/subscription.js';
+
 const router = express.Router();
-const ticketController = require('../controllers/ticket.controller');
-const { validateCreateTicket, validateTicketId } = require('../validators/ticket.validator');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { attachOrganization, requireOrganization } = require('../middleware/organization');
-const { checkSubscriptionLimits } = require('../middleware/subscription');
 
 // Create ticket (any authenticated user, with limit check)
 router.post(
@@ -53,4 +55,4 @@ router.delete(
   ticketController.deleteTicket
 );
 
-module.exports = router;
+export default router;

@@ -12,7 +12,6 @@ const TicketList = () => {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [deleting, setDeleting] = useState(false);
 
   const fetchTickets = async () => {
     try {
@@ -31,7 +30,7 @@ const TicketList = () => {
     try {
       const response = await apiClient.get('/assets');
       setAssets(response.data);
-    } catch (err) {
+    } catch {
       setAssets([]);
     }
   };
@@ -90,7 +89,7 @@ const TicketList = () => {
       });
       fetchTickets();
       handleCloseModal();
-    } catch (err) {
+    } catch {
       setError('Failed to create ticket.');
     } finally {
       setSubmitting(false);

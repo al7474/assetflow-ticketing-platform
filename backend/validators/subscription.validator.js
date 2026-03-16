@@ -3,7 +3,7 @@
  * Input validation for subscription-related endpoints
  */
 
-const validateCheckout = (req, res, next) => {
+export const validateCheckout = (req, res, next) => {
   const { tier } = req.body;
 
   if (!tier) {
@@ -19,7 +19,7 @@ const validateCheckout = (req, res, next) => {
   next();
 };
 
-const validateDemoUpgrade = (req, res, next) => {
+export const validateDemoUpgrade = (req, res, next) => {
   const { tier } = req.body;
 
   if (!tier) {
@@ -35,7 +35,4 @@ const validateDemoUpgrade = (req, res, next) => {
   next();
 };
 
-module.exports = {
-  validateCheckout,
-  validateDemoUpgrade
-};
+

@@ -3,7 +3,8 @@
  * Database operations for ticket-related functionality
  */
 
-const { PrismaClient } = require('@prisma/client');
+
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class TicketService {
@@ -136,4 +137,4 @@ class TicketService {
   }
 }
 
-module.exports = new TicketService();
+export default new TicketService();

@@ -2,12 +2,14 @@
  * Subscription routes
  */
 
-const express = require('express');
+
+import express from 'express';
+import subscriptionController from '../controllers/subscription.controller.js';
+import { validateCheckout, validateDemoUpgrade } from '../validators/subscription.validator.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { attachOrganization } from '../middleware/organization.js';
+
 const router = express.Router();
-const subscriptionController = require('../controllers/subscription.controller');
-const { validateCheckout, validateDemoUpgrade } = require('../validators/subscription.validator');
-const { authenticateToken } = require('../middleware/auth');
-const { attachOrganization } = require('../middleware/organization');
 
 // Public routes
 router.get('/plans', subscriptionController.getPlans);
@@ -23,4 +25,4 @@ router.post('/portal', authenticateToken, attachOrganization, subscriptionContro
 // Development/Demo route (no Stripe required)
 router.post('/demo-upgrade', authenticateToken, attachOrganization, validateDemoUpgrade, subscriptionController.demoUpgrade);
 
-module.exports = router;
+export default router;

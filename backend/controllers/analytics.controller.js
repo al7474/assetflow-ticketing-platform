@@ -3,8 +3,9 @@
  * Business logic for analytics and reporting
  */
 
-const ticketService = require('../services/ticket.service');
-const assetService = require('../services/asset.service');
+
+import ticketService from '../services/ticket.service.js';
+import assetService from '../services/asset.service.js';
 
 class AnalyticsController {
   /**
@@ -73,4 +74,4 @@ class AnalyticsController {
   }
 }
 
-module.exports = new AnalyticsController();
+export default new AnalyticsController();

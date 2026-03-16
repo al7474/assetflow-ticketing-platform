@@ -1,9 +1,11 @@
-const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+import jwt from 'jsonwebtoken';
+
+
+export const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // Middleware to verify JWT token
-const authenticateToken = (req, res, next) => {
+export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -21,15 +23,11 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Middleware to check if user has admin role
-const requireAdmin = (req, res, next) => {
+export const requireAdmin = (req, res, next) => {
   if (req.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
   }
   next();
 };
 
-module.exports = { 
-  authenticateToken, 
-  requireAdmin,
-  JWT_SECRET 
-};
+

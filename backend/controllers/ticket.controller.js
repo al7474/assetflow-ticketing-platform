@@ -3,9 +3,10 @@
  * Business logic for ticket-related operations
  */
 
-const ticketService = require('../services/ticket.service');
-const assetService = require('../services/asset.service');
-const { sendTicketNotification } = require('../utils/email');
+
+import ticketService from '../services/ticket.service.js';
+import assetService from '../services/asset.service.js';
+import { sendTicketNotification } from '../utils/email.js';
 
 class TicketController {
   /**
@@ -117,4 +118,4 @@ class TicketController {
   }
 }
 
-module.exports = new TicketController();
+export default new TicketController();

@@ -18,7 +18,7 @@ export default function CreateAsset({ onAssetCreated }) {
       setSerialNumber('');
       setType('');
       if (onAssetCreated) onAssetCreated();
-    } catch (err) {
+    } catch {
       setError('Failed to create asset');
     } finally {
       setLoading(false);

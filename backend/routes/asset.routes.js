@@ -2,11 +2,13 @@
  * Asset routes
  */
 
-const express = require('express');
+
+import express from 'express';
+import assetController from '../controllers/asset.controller.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { attachOrganization, requireOrganization } from '../middleware/organization.js';
+
 const router = express.Router();
-const assetController = require('../controllers/asset.controller');
-const { authenticateToken } = require('../middleware/auth');
-const { attachOrganization, requireOrganization } = require('../middleware/organization');
 
 // Get all assets (organization-scoped)
 router.get(
@@ -17,7 +19,7 @@ router.get(
   assetController.getAssets
 );
 
-module.exports = router;
+export default router;
 // Create asset (organization-scoped)
 router.post(
   '/',

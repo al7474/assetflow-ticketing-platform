@@ -3,7 +3,8 @@
  * Database operations for auth-related functionality
  */
 
-const { PrismaClient } = require('@prisma/client');
+
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class AuthService {
@@ -77,4 +78,4 @@ class AuthService {
   }
 }
 
-module.exports = new AuthService();
+export default new AuthService();

@@ -3,7 +3,8 @@
  * Business logic for asset-related operations
  */
 
-const assetService = require('../services/asset.service');
+
+import assetService from '../services/asset.service.js';
 
 class AssetController {
   /**
@@ -68,4 +69,4 @@ class AssetController {
   }
 }
 
-module.exports = new AssetController();
+export default new AssetController();

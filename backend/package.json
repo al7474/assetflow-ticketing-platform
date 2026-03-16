@@ -1,6 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
@@ -13,7 +14,9 @@
     "migrate:status": "prisma migrate status",
     "prisma:generate": "prisma generate",
     "test": "jest --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "lint": "npx eslint .",
+    "format": "npx prettier --write ."
   },
   "keywords": [],
   "author": "",

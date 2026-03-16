@@ -3,7 +3,8 @@
  * Database operations for organization and subscription-related functionality
  */
 
-const { PrismaClient } = require('@prisma/client');
+
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class OrganizationService {
@@ -107,4 +108,4 @@ class OrganizationService {
   }
 }
 
-module.exports = new OrganizationService();
+export default new OrganizationService();

@@ -1,5 +1,5 @@
-const { Resend } = require('resend');
 
+import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Send welcome email to new user
@@ -159,8 +159,5 @@ async function sendSubscriptionEmail(email, name, tier, status) {
   }
 }
 
-module.exports = {
-  sendWelcomeEmail,
-  sendTicketNotification,
-  sendSubscriptionEmail
-};
+
+export { sendWelcomeEmail, sendTicketNotification, sendSubscriptionEmail };

@@ -1,6 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const { PLANS } = require('../config/stripe');
 
+import { PrismaClient } from '@prisma/client';
+import { PLANS } from '../config/stripe.js';
 const prisma = new PrismaClient();
 
 // Middleware to check subscription limits
@@ -98,4 +98,5 @@ const checkSubscriptionLimits = (resourceType) => {
   };
 };
 
-module.exports = { checkSubscriptionLimits };
+
+export { checkSubscriptionLimits };

@@ -3,7 +3,7 @@
  * Input validation for ticket-related endpoints
  */
 
-const validateCreateTicket = (req, res, next) => {
+export const validateCreateTicket = (req, res, next) => {
   const { description, assetId } = req.body;
 
   if (!description || !description.trim()) {
@@ -25,7 +25,7 @@ const validateCreateTicket = (req, res, next) => {
   next();
 };
 
-const validateTicketId = (req, res, next) => {
+export const validateTicketId = (req, res, next) => {
   const { id } = req.params;
   const ticketId = parseInt(id);
 
@@ -39,7 +39,4 @@ const validateTicketId = (req, res, next) => {
   next();
 };
 
-module.exports = {
-  validateCreateTicket,
-  validateTicketId
-};
+

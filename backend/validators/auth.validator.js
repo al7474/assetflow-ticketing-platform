@@ -3,7 +3,7 @@
  * Input validation for auth-related endpoints
  */
 
-const validateRegistration = (req, res, next) => {
+export const validateRegistration = (req, res, next) => {
   const { name, email, password } = req.body;
 
   if (!name || !name.trim()) {
@@ -31,7 +31,7 @@ const validateRegistration = (req, res, next) => {
   next();
 };
 
-const validateLogin = (req, res, next) => {
+export const validateLogin = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !email.trim()) {
@@ -45,7 +45,7 @@ const validateLogin = (req, res, next) => {
   next();
 };
 
-const validateInvite = (req, res, next) => {
+export const validateInvite = (req, res, next) => {
   const { name, email, password } = req.body;
 
   if (!name || !name.trim()) {
@@ -72,8 +72,4 @@ const validateInvite = (req, res, next) => {
   next();
 };
 
-module.exports = {
-  validateRegistration,
-  validateLogin,
-  validateInvite
-};
+

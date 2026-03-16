@@ -2,11 +2,13 @@
  * Analytics routes
  */
 
-const express = require('express');
+
+import express from 'express';
+import analyticsController from '../controllers/analytics.controller.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { attachOrganization, requireOrganization } from '../middleware/organization.js';
+
 const router = express.Router();
-const analyticsController = require('../controllers/analytics.controller');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { attachOrganization, requireOrganization } = require('../middleware/organization');
 
 // Get dashboard analytics (admin only)
 router.get(
@@ -18,4 +20,4 @@ router.get(
   analyticsController.getDashboard
 );
 
-module.exports = router;
+export default router;

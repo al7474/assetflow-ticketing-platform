@@ -1,6 +1,7 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../middleware/auth');
+
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../middleware/auth.js';
 
 const SALT_ROUNDS = 10;
 
@@ -28,8 +29,5 @@ function generateToken(user) {
   );
 }
 
-module.exports = {
-  hashPassword,
-  comparePassword,
-  generateToken
-};
+
+export { hashPassword, comparePassword, generateToken };

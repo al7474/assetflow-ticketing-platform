@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
@@ -15,10 +15,8 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    
     // Remove both classes first to avoid conflicts
     root.classList.remove('light', 'dark');
-    
     // Add the correct class
     if (isDark) {
       root.classList.add('dark');
@@ -40,10 +38,4 @@ export function ThemeProvider({ children }) {
   );
 }
 
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-}
+export { ThemeContext };

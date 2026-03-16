@@ -3,9 +3,10 @@
  * Business logic for auth-related operations
  */
 
-const authService = require('../services/auth.service');
-const { hashPassword, comparePassword, generateToken } = require('../utils/auth');
-const { sendWelcomeEmail } = require('../utils/email');
+
+import authService from '../services/auth.service.js';
+import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
+import { sendWelcomeEmail } from '../utils/email.js';
 
 class AuthController {
   /**
@@ -169,4 +170,4 @@ class AuthController {
   }
 }
 
-module.exports = new AuthController();
+export default new AuthController();

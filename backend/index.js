@@ -1,21 +1,21 @@
+
 /**
  * AssetFlow Backend - Main Server Entry Point
  * Refactored MVC architecture for scalability
  */
 
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
 
-// Import routes
-const authRoutes = require('./routes/auth.routes');
-const assetRoutes = require('./routes/asset.routes');
-const ticketRoutes = require('./routes/ticket.routes');
-const analyticsRoutes = require('./routes/analytics.routes');
-const subscriptionRoutes = require('./routes/subscription.routes');
+import authRoutes from './routes/auth.routes.js';
+import assetRoutes from './routes/asset.routes.js';
+import ticketRoutes from './routes/ticket.routes.js';
+import analyticsRoutes from './routes/analytics.routes.js';
+import subscriptionRoutes from './routes/subscription.routes.js';
+import subscriptionController from './controllers/subscription.controller.js';
 
-// Import subscription controller for webhook
-const subscriptionController = require('./controllers/subscription.controller');
+dotenv.config();
 
 const app = express();
 
@@ -35,6 +35,7 @@ app.use(cors({
   },
   credentials: true
 }));
+
 
 // CRITICAL: Stripe webhook MUST be before express.json() middleware
 // Webhook requires raw body for signature verification
@@ -69,6 +70,7 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
+
 
 // Start server
 const PORT = process.env.PORT || 3000;

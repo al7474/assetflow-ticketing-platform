@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import apiClient from '../../api/client';
 import CreateAsset from './CreateAsset';
 
-export default function AssetList({ user, isAdmin }) {
+export default function AssetList({ user }) {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

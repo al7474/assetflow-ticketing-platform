@@ -5,7 +5,7 @@ function BillingPage() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [portalLoading, setPortalLoading] = useState(false);
+  
 
   useEffect(() => {
     fetchSubscription();
@@ -30,22 +30,6 @@ function BillingPage() {
     }
   };
 
-  const handleManageBilling = async () => {
-    setPortalLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await apiClient.post(
-        '/subscription/portal',
-        {}
-      );
-
-      window.location.href = response.data.url;
-    } catch (err) {
-      console.error('Portal error:', err);
-      setError(err.response?.data?.error || 'Failed to open billing portal');
-      setPortalLoading(false);
-    }
-  };
 
   const getUsagePercentage = (current, max) => {
     if (max === -1) return 0;
