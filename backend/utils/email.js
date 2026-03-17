@@ -1,6 +1,9 @@
 
+
 import { Resend } from 'resend';
+import { PrismaClient } from '@prisma/client';
 const resend = new Resend(process.env.RESEND_API_KEY);
+const prisma = new PrismaClient();
 
 // Send welcome email to new user
 async function sendWelcomeEmail(email, name, organizationName) {
@@ -37,63 +40,64 @@ async function sendWelcomeEmail(email, name, organizationName) {
   }
 }
 
+
 // Send ticket notification to admins
 async function sendTicketNotification(organizationId, ticket, asset, user) {
   if (!process.env.RESEND_API_KEY) {
     console.log('⚠️  RESEND_API_KEY not configured, skipping email');
     return;
   }
-
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-
-    // Get all admins from the organization
-    const admins = await prisma.user.findMany({
-      where: {
-        organizationId,
-        role: 'ADMIN'
-      },
-      select: { email: true, name: true }
-    });
-
-    for (const admin of admins) {
-      await resend.emails.send({
-        from: 'AssetFlow <notifications@resend.dev>',
-        to: admin.email,
-        subject: `New Ticket Created - ${asset.name}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #dc2626;">🔧 New Maintenance Ticket</h2>
-            <p>Hi ${admin.name},</p>
-            <p>A new ticket has been created by <strong>${user.name}</strong>.</p>
-            
-            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 5px 0;"><strong>Asset:</strong> ${asset.name} (${asset.serialNumber})</p>
-              <p style="margin: 5px 0;"><strong>Type:</strong> ${asset.type}</p>
-              <p style="margin: 5px 0;"><strong>Description:</strong></p>
-              <p style="margin: 5px 0; padding: 10px; background-color: white; border-radius: 4px;">${ticket.description}</p>
-              <p style="margin: 5px 0;"><strong>Reported by:</strong> ${user.name} (${user.email})</p>
-              <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
-            </div>
-
-            <div style="margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL}/tickets" 
-                 style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                View Ticket
-              </a>
-            </div>
-
-            <p>Please review and assign this ticket as soon as possible.</p>
-            <p>Best regards,<br>AssetFlow Notification System</p>
-          </div>
-        `
-      });
-    }
-
+    const admins = await _getOrganizationAdmins(organizationId);
+    await _sendTicketNotificationEmails(admins, ticket, asset, user);
     console.log(`✅ Ticket notification sent to ${admins.length} admin(s)`);
   } catch (error) {
     console.error('❌ Failed to send ticket notification:', error);
+  }
+}
+
+// Helper to get all admins from the organization
+async function _getOrganizationAdmins(organizationId) {
+  return prisma.user.findMany({
+    where: {
+      organizationId,
+      role: 'ADMIN'
+    },
+    select: { email: true, name: true }
+  });
+}
+
+// Helper to send ticket notification emails to admins
+async function _sendTicketNotificationEmails(admins, ticket, asset, user) {
+  for (const admin of admins) {
+    await resend.emails.send({
+      from: 'AssetFlow <notifications@resend.dev>',
+      to: admin.email,
+      subject: `New Ticket Created - ${asset.name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">🔧 New Maintenance Ticket</h2>
+          <p>Hi ${admin.name},</p>
+          <p>A new ticket has been created by <strong>${user.name}</strong>.</p>
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Asset:</strong> ${asset.name} (${asset.serialNumber})</p>
+            <p style="margin: 5px 0;"><strong>Type:</strong> ${asset.type}</p>
+            <p style="margin: 5px 0;"><strong>Description:</strong></p>
+            <p style="margin: 5px 0; padding: 10px; background-color: white; border-radius: 4px;">${ticket.description}</p>
+            <p style="margin: 5px 0;"><strong>Reported by:</strong> ${user.name} (${user.email})</p>
+            <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
+          </div>
+          <div style="margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL}/tickets" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              View Ticket
+            </a>
+          </div>
+          <p>Please review and assign this ticket as soon as possible.</p>
+          <p>Best regards,<br>AssetFlow Notification System</p>
+        </div>
+      `
+    });
   }
 }
 

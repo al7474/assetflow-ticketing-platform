@@ -25,37 +25,30 @@ class AuthController {
       // Hash password
       const hashedPassword = await hashPassword(password);
 
-      // Create organization for user
-      const emailDomain = email.split('@')[1].split('.')[0];
-      const orgSlug = `${emailDomain}-${Date.now()}`;
+      // Generate organization slug
+      const orgSlug = this._generateOrgSlug(email, name);
 
-      const newOrg = await authService.createOrganization(
-        `${name}'s Organization`,
+      // Create organization and user
+      const { organization, user } = await this._createOrganizationAndUser({
+        name,
+        email,
+        hashedPassword,
         orgSlug
-      );
-
-      // Create user as ADMIN
-        const newUser = await authService.createUser({
-          name,
-          email,
-          password: hashedPassword,
-          role: 'EMPLOYEE',
-          organizationId: newOrg.id
-        });
+      });
 
       // Send welcome email
-      await sendWelcomeEmail(email, name, newOrg.name);
+      await sendWelcomeEmail(email, name, organization.name);
 
       // Generate token
-      const token = generateToken(newUser);
+      const token = generateToken(user);
 
       res.status(201).json({
         message: 'User registered successfully',
         user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
         },
         token
       });
@@ -63,6 +56,36 @@ class AuthController {
       console.error('Registration error:', error);
       res.status(500).json({ error: 'Internal server error during registration.' });
     }
+  }
+
+  /**
+   * Generate a unique organization slug based on email and name
+   */
+  _generateOrgSlug(email, name) {
+    try {
+      const emailDomain = email.split('@')[1]?.split('.')[0] || name.replace(/\s+/g, '-').toLowerCase();
+      return `${emailDomain}-${Date.now()}`;
+    } catch {
+      return `org-${Date.now()}`;
+    }
+  }
+
+  /**
+   * Create organization and associated user
+   */
+  async _createOrganizationAndUser({ name, email, hashedPassword, orgSlug }) {
+    const organization = await authService.createOrganization(
+      `${name}'s Organization`,
+      orgSlug
+    );
+    const user = await authService.createUser({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'EMPLOYEE',
+      organizationId: organization.id
+    });
+    return { organization, user };
   }
 
   /**

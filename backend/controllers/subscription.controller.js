@@ -30,24 +30,12 @@ class SubscriptionController {
   async getStatus(req, res) {
     try {
       const organizationId = req.user.organizationId;
-
-      const organization = await organizationService.getOrganizationWithSubscription(
-        organizationId
-      );
-
+      const organization = await organizationService.getOrganizationWithSubscription(organizationId);
       if (!organization) {
         return res.status(404).json({ error: 'Organization not found' });
       }
-
       const plan = PLANS[organization.subscriptionTier] || PLANS.FREE;
-
-      // Get current usage
-      const [assetCount, ticketCount, userCount] = await Promise.all([
-        assetService.countAssetsByOrganization(organizationId),
-        ticketService.countTicketsByOrganization(organizationId),
-        organizationService.countUsers(organizationId)
-      ]);
-
+      const usage = await this._getOrganizationUsage(organizationId);
       res.json({
         tier: organization.subscriptionTier,
         status: organization.subscriptionStatus,
@@ -57,16 +45,28 @@ class SubscriptionController {
           price: plan.price,
           limits: plan.limits
         },
-        usage: {
-          assets: assetCount,
-          tickets: ticketCount,
-          users: userCount
-        }
+        usage
       });
     } catch (error) {
       console.error('Subscription status error:', error);
       res.status(500).json({ error: 'Failed to fetch subscription status' });
     }
+  }
+
+  /**
+   * Helper to get organization usage counts
+   */
+  async _getOrganizationUsage(organizationId) {
+    const [assetCount, ticketCount, userCount] = await Promise.all([
+      assetService.countAssetsByOrganization(organizationId),
+      ticketService.countTicketsByOrganization(organizationId),
+      organizationService.countUsers(organizationId)
+    ]);
+    return {
+      assets: assetCount,
+      tickets: ticketCount,
+      users: userCount
+    };
   }
 
   /**
@@ -76,64 +76,69 @@ class SubscriptionController {
     try {
       const { tier } = req.body;
       const organizationId = req.user.organizationId;
-
       const organization = await organizationService.getOrganizationById(organizationId);
       if (!organization) {
         return res.status(404).json({ error: 'Organization not found' });
       }
-
       // Prevent same tier purchase
       if (organization.subscriptionTier === tier) {
         return res.status(400).json({ error: 'You are already on this plan' });
       }
-
       const plan = PLANS[tier];
       if (!plan.stripePriceId) {
-        return res.status(400).json({ 
-          error: 'Stripe price ID not configured for this plan' 
-        });
+        return res.status(400).json({ error: 'Stripe price ID not configured for this plan' });
       }
-
-      // Create or retrieve Stripe customer
-      let customerId = organization.stripeCustomerId;
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: req.user.email,
-          metadata: {
-            organizationId: organizationId.toString()
-          }
-        });
-        customerId = customer.id;
-
-        await organizationService.updateStripeCustomer(organizationId, customerId);
-      }
-
+      // Get or create Stripe customer ID
+      const customerId = await this._getOrCreateStripeCustomerId(organization, organizationId, req.user.email);
       // Create checkout session
-      /* eslint-disable camelcase */
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: plan.stripePriceId,
-            quantity: 1
-          }
-        ],
-        success_url: `${process.env.FRONTEND_URL}/billing?success=true`,
-        cancel_url: `${process.env.FRONTEND_URL}/billing?canceled=true`,
-        metadata: {
-          organizationId: organizationId.toString(),
-          tier
-        }
-      });
-      /* eslint-enable camelcase */
-
+      const session = await this._createStripeCheckoutSession({ customerId, plan, organizationId, tier });
       res.json({ url: session.url });
     } catch (error) {
       console.error('Checkout error:', error);
       res.status(500).json({ error: 'Failed to create checkout session' });
     }
+  }
+
+  /**
+   * Helper to get or create Stripe customer ID
+   */
+  async _getOrCreateStripeCustomerId(organization, organizationId, email) {
+    let customerId = organization.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email,
+        metadata: { organizationId: organizationId.toString() }
+      });
+      customerId = customer.id;
+      await organizationService.updateStripeCustomer(organizationId, customerId);
+    }
+    return customerId;
+  }
+
+  /**
+   * Helper to create Stripe checkout session
+   */
+  async _createStripeCheckoutSession({ customerId, plan, organizationId, tier }) {
+    /* eslint-disable camelcase */
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: plan.stripePriceId,
+          quantity: 1
+        }
+      ],
+      success_url: `${process.env.FRONTEND_URL}/billing?success=true`,
+      cancel_url: `${process.env.FRONTEND_URL}/billing?canceled=true`,
+      metadata: {
+        organizationId: organizationId.toString(),
+        tier
+      }
+    });
+    /* eslint-enable camelcase */
+    return session;
   }
 
   /**
@@ -172,31 +177,19 @@ class SubscriptionController {
     try {
       const { tier } = req.body;
       const organizationId = req.user.organizationId;
-
       if (!['FREE', 'PRO', 'ENTERPRISE'].includes(tier)) {
-        return res.status(400).json({ 
-          error: 'Invalid tier. Choose FREE, PRO, or ENTERPRISE.' 
-        });
+        return res.status(400).json({ error: 'Invalid tier. Choose FREE, PRO, or ENTERPRISE.' });
       }
-
       const organization = await organizationService.getOrganizationById(organizationId);
       if (!organization) {
         return res.status(404).json({ error: 'Organization not found' });
       }
-
-      // Simulate subscription period (30 days from now for paid plans)
-      const currentPeriodEnd = tier === 'FREE' ? null : new Date();
-      if (currentPeriodEnd) {
-        currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
-      }
-
-      // Update organization directly (no Stripe involved)
+      const currentPeriodEnd = this._calculateDemoPeriodEnd(tier);
       await organizationService.updateSubscription(organizationId, {
         subscriptionTier: tier,
         subscriptionStatus: tier === 'FREE' ? 'canceled' : 'active',
         currentPeriodEnd
       });
-
       // Send confirmation email
       const adminUsers = await organizationService.getAdminUsers(organizationId);
       if (adminUsers.length > 0) {
@@ -207,9 +200,7 @@ class SubscriptionController {
           'active'
         );
       }
-
       const action = tier === 'FREE' ? 'downgraded' : (organization.subscriptionTier === 'FREE' ? 'upgraded' : 'changed');
-      
       res.json({
         success: true,
         message: `Successfully ${action} to ${tier} plan (Demo Mode)`,
@@ -220,6 +211,16 @@ class SubscriptionController {
       console.error('Demo upgrade error:', error);
       res.status(500).json({ error: 'Failed to upgrade plan' });
     }
+  }
+
+  /**
+   * Helper to calculate demo period end date
+   */
+  _calculateDemoPeriodEnd(tier) {
+    if (tier === 'FREE') return null;
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date;
   }
 
   /**
