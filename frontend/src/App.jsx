@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useReportFailureModal } from './hooks/useReportFailureModal';
 import { useAuth } from './context/authHelpers';
 import Dashboard from './components/Dashboard';
 import PricingPage from './components/pricing/PricingPage';
@@ -14,19 +15,21 @@ import './App.css';
 function App() {
   const { user, loading: authLoading, logout, isAdmin, organization } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard', 'assets', 'tickets', 'pricing', 'billing'
+  const {
+    showModal,
+    setShowModal,
+    selectedAsset,
+    setSelectedAsset,
+    description,
+    setDescription,
+    submitting,
+    setSubmitting,
+    handleCloseModal,
+    handleOpenModal,
+  } = useReportFailureModal();
 
-  // Modal handlers for reporting asset failure
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedAsset(null);
-    setDescription('');
-  };
+  // Handler for submitting the report failure modal
   const handleSubmitReport = async (e) => {
     e.preventDefault();
     if (!description.trim()) {

@@ -1,31 +1,13 @@
-import { useState, useEffect } from 'react';
-import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import apiClient from '../api/client';
+import { useDashboardAnalytics } from '../hooks/useDashboardAnalytics';
+import { TicketsStatusPieChart } from './dashboard/TicketsStatusPieChart';
+import { TicketsByAssetBarChart } from './dashboard/TicketsByAssetBarChart';
+import { TicketsTimelineLineChart } from './dashboard/TicketsTimelineLineChart';
+import { SummaryCard } from './dashboard/SummaryCard';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
 export default function Dashboard() {
-  const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get('/analytics/dashboard');
-      setAnalytics(response.data);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError('Failed to load analytics');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { analytics, loading, error } = useDashboardAnalytics();
 
   if (loading) {
     return (
@@ -57,53 +39,10 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-200 text-sm font-medium">Total Tickets</p>
-              <p className="text-3xl font-bold text-gray-800 dark:text-white mt-1">{summary.totalTickets}</p>
-            </div>
-            <div className="bg-indigo-100 dark:bg-indigo-900/50 p-3 rounded-lg">
-              <span className="text-2xl">🎫</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-200 text-sm font-medium">Open Tickets</p>
-              <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-1">{summary.openTickets}</p>
-            </div>
-            <div className="bg-orange-100 dark:bg-orange-900/50 p-3 rounded-lg">
-              <span className="text-2xl">⚠️</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-200 text-sm font-medium">Closed Tickets</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">{summary.closedTickets}</p>
-            </div>
-            <div className="bg-green-100 dark:bg-green-900/50 p-3 rounded-lg">
-              <span className="text-2xl">✅</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-200 text-sm font-medium">Total Assets</p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">{summary.totalAssets}</p>
-            </div>
-            <div className="bg-purple-100 dark:bg-purple-900/50 p-3 rounded-lg">
-              <span className="text-2xl">📦</span>
-            </div>
-          </div>
-        </div>
+        <SummaryCard label="Total Tickets" value={summary.totalTickets} icon="🎫" color="indigo" />
+        <SummaryCard label="Open Tickets" value={summary.openTickets} icon="⚠️" color="orange" />
+        <SummaryCard label="Closed Tickets" value={summary.closedTickets} icon="✅" color="green" />
+        <SummaryCard label="Total Assets" value={summary.totalAssets} icon="📦" color="purple" />
       </div>
 
       {/* Charts Row 1 */}
@@ -111,114 +50,20 @@ export default function Dashboard() {
         {/* Tickets by Status - Pie Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Tickets by Status</h3>
-          {summary.totalTickets > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#f59e0b' : '#10b981'} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgb(31, 41, 55)', 
-                    border: '1px solid rgb(75, 85, 99)',
-                    borderRadius: '0.5rem',
-                    color: '#fff'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-200">
-              <p>No tickets data available</p>
-            </div>
-          )}
+          <TicketsStatusPieChart data={statusData} totalTickets={summary.totalTickets} />
         </div>
 
         {/* Tickets by Asset - Bar Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Tickets by Asset</h3>
-          {ticketsByAsset.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ticketsByAsset}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.5} />
-                <XAxis 
-                  dataKey="assetName" 
-                  angle={-45} 
-                  textAnchor="end" 
-                  height={100}
-                  stroke="#9ca3af"
-                  tick={{ fill: '#9ca3af' }}
-                />
-                <YAxis 
-                  stroke="#9ca3af"
-                  tick={{ fill: '#9ca3af' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgb(31, 41, 55)', 
-                    border: '1px solid rgb(75, 85, 99)',
-                    borderRadius: '0.5rem',
-                    color: '#fff'
-                  }}
-                />
-                <Bar dataKey="count" fill="#6366f1" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-200">
-              <p>No tickets by asset data available</p>
-            </div>
-          )}
+          <TicketsByAssetBarChart data={ticketsByAsset} />
         </div>
       </div>
 
       {/* Timeline Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Tickets Timeline (Last 7 Days)</h3>
-        {timeline.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={timeline}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.5} />
-              <XAxis 
-                dataKey="date"
-                stroke="#9ca3af"
-                tick={{ fill: '#9ca3af' }}
-              />
-              <YAxis 
-                stroke="#9ca3af"
-                tick={{ fill: '#9ca3af' }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgb(31, 41, 55)', 
-                  border: '1px solid rgb(75, 85, 99)',
-                  borderRadius: '0.5rem',
-                  color: '#fff'
-                }}
-              />
-              <Legend 
-                wrapperStyle={{ color: '#9ca3af' }}
-              />
-              <Line type="monotone" dataKey="open" stroke="#f59e0b" strokeWidth={2} name="Open" />
-              <Line type="monotone" dataKey="closed" stroke="#10b981" strokeWidth={2} name="Closed" />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center h-64 text-gray-400 dark:text-gray-200">
-            <p>No recent tickets in the last 7 days</p>
-          </div>
-        )}
+        <TicketsTimelineLineChart data={timeline} />
       </div>
     </div>
   );
