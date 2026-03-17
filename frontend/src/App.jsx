@@ -86,7 +86,7 @@ function App() {
         {viewMode === 'pricing' && <PricingPage />}
 
         {/* Billing View */}
-        {viewMode === 'billing' && <BillingPage />}
+        {viewMode === 'billing' && <BillingPage setViewMode={setViewMode} />}
 
         {/* Assets View */}
         {viewMode === 'assets' && <AssetList user={user} isAdmin={isAdmin} />}

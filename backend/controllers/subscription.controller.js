@@ -27,7 +27,7 @@ class SubscriptionController {
   /**
    * Get current subscription status
    */
-  async getStatus(req, res) {
+  getStatus = async (req, res) => {
     try {
       const organizationId = req.user.organizationId;
       const organization = await organizationService.getOrganizationWithSubscription(organizationId);
@@ -49,6 +49,15 @@ class SubscriptionController {
       });
     } catch (error) {
       console.error('Subscription status error:', error);
+      // Extra debug info for troubleshooting
+      if (req && req.user) {
+        console.error('User in request:', req.user);
+      } else {
+        console.error('No user in request');
+      }
+      if (error && error.stack) {
+        console.error('Stack trace:', error.stack);
+      }
       res.status(500).json({ error: 'Failed to fetch subscription status' });
     }
   }
@@ -56,7 +65,7 @@ class SubscriptionController {
   /**
    * Helper to get organization usage counts
    */
-  async _getOrganizationUsage(organizationId) {
+  _getOrganizationUsage = async (organizationId) => {
     const [assetCount, ticketCount, userCount] = await Promise.all([
       assetService.countAssetsByOrganization(organizationId),
       ticketService.countTicketsByOrganization(organizationId),
@@ -173,7 +182,7 @@ class SubscriptionController {
    * Demo mode upgrade/downgrade (Development only - no Stripe required)
    * Instantly changes organization to selected tier
    */
-  async demoUpgrade(req, res) {
+    demoUpgrade = async (req, res) => {
     try {
       const { tier } = req.body;
       const organizationId = req.user.organizationId;
@@ -216,7 +225,7 @@ class SubscriptionController {
   /**
    * Helper to calculate demo period end date
    */
-  _calculateDemoPeriodEnd(tier) {
+    _calculateDemoPeriodEnd = (tier) => {
     if (tier === 'FREE') return null;
     const date = new Date();
     date.setDate(date.getDate() + 30);

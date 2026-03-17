@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../api/client';
 
-function BillingPage() {
+function BillingPage({ setViewMode }) {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -102,12 +102,12 @@ function BillingPage() {
         </div>
 
         <div className="flex gap-4 mt-6">
-          <a
-            href="/pricing"
+          <button
             className="flex-1 bg-blue-600 dark:bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-center"
+            onClick={() => setViewMode('pricing')}
           >
             {subscription.tier === 'FREE' ? '⬆️ Upgrade Plan' : subscription.tier === 'ENTERPRISE' ? '📊 View All Plans' : '⬆️ Upgrade or ⬇️ Downgrade'}
-          </a>
+          </button>
         </div>
       </div>
 
