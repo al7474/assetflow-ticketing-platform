@@ -1,4 +1,3 @@
-
 /**
  * AssetFlow Backend - Main Server Entry Point
  * Refactored MVC architecture for scalability
@@ -7,6 +6,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/auth.routes.js';
 import assetRoutes from './routes/asset.routes.js';
@@ -18,6 +18,8 @@ import subscriptionController from './controllers/subscription.controller.js';
 dotenv.config();
 
 const app = express();
+
+app.use(cookieParser());
 
 // Configure CORS
 const allowedOrigins = [

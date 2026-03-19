@@ -41,7 +41,7 @@ class AuthController {
 
       // Generate token
       const token = generateToken(user);
-
+      res.cookie('token', token, AuthController._getCookieOptions());
       res.status(201).json({
         message: 'User registered successfully',
         user: {
@@ -49,8 +49,7 @@ class AuthController {
           name: user.name,
           email: user.email,
           role: user.role
-        },
-        token
+        }
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -109,7 +108,7 @@ class AuthController {
 
       // Generate token
       const token = generateToken(user);
-
+      res.cookie('token', token, AuthController._getCookieOptions());
       res.json({
         message: 'Login successful',
         user: {
@@ -119,8 +118,7 @@ class AuthController {
           role: user.role,
           organizationId: user.organizationId,
           organization: user.organization
-        },
-        token
+        }
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -190,6 +188,28 @@ class AuthController {
       console.error('Invite user error:', error);
       res.status(500).json({ error: 'Internal server error during user invitation.' });
     }
+  }
+
+  /**
+   * Logout user - clear JWT cookie
+   */
+  async logout(req, res) {
+    res.clearCookie('token');
+    res.json({ message: 'Logout successful' });
+  }
+
+  /**
+   * Helper to get cookie options based on environment
+   * Made static so it can be called without relying on 'this' context
+   */
+  static _getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
   }
 }
 

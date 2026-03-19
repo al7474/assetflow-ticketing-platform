@@ -5,75 +5,67 @@ import { AuthContext } from './authContextInstance';
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
 
-  // Load user on mount if token exists
+  // Load user on mount
   useEffect(() => {
     const loadUser = async () => {
       try {
         const response = await apiClient.get('/auth/me');
         setUser(response.data);
       } catch (error) {
-        console.error('Failed to load user:', error);
-        // Token might be invalid, clear it
-        logout();
+        // If not logged in, just set user to null and don't log error
+        if (error.response && error.response.status === 401) {
+          setUser(null);
+        } else {
+          console.error('Failed to load user:', error);
+        }
       } finally {
         setLoading(false);
       }
     };
-    if (token) {
-      loadUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
+    loadUser();
+  }, []);
 
+  // Login: no token handling, rely on cookie
   const login = async (email, password) => {
     try {
       const response = await apiClient.post('/auth/login', { email, password });
-      const { user, token } = response.data;
-      
-      // Save token
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      
+      setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Login failed'
       };
     }
   };
 
+  // Register: no token handling, rely on cookie
   const register = async (name, email, password) => {
     try {
-      const response = await apiClient.post('/auth/register', { 
-        name, 
-        email, 
-        password 
+      const response = await apiClient.post('/auth/register', {
+        name,
+        email,
+        password
       });
-      const { user, token } = response.data;
-      
-      // Save token
-      localStorage.setItem('token', token);
-      setToken(token);
-      setUser(user);
-      
+      setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Registration failed'
       };
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
+  // Logout: clear user state and call backend to clear cookie
+  const logout = async () => {
     setUser(null);
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      // Ignore errors on logout
+    }
   };
 
   const isAdmin = user?.role === 'ADMIN';

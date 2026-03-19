@@ -15,6 +15,7 @@ const router = express.Router();
 // Public routes
 router.post('/register', validateRegistration, authController.register);
 router.post('/login', validateLogin, authController.login);
+router.post('/logout', authController.logout); // Logout route
 
 // Protected routes
 router.get('/me', authenticateToken, authController.getMe);

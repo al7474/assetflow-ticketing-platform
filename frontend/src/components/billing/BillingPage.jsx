@@ -13,12 +13,6 @@ function BillingPage({ setViewMode }) {
 
   const fetchSubscription = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-
       const response = await apiClient.get('/subscription/status');
 
       setSubscription(response.data);

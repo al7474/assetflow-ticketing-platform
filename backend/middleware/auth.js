@@ -1,4 +1,3 @@
-
 import jwt from 'jsonwebtoken';
 
 
@@ -6,8 +5,14 @@ export const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-p
 
 // Middleware to verify JWT token
 export const authenticateToken = (req, res, next) => {
+  // Try to get token from Authorization header or cookie
+  let token = null;
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
 
   if (!token) {
     return res.status(401).json({ error: 'Access denied. No token provided.' });

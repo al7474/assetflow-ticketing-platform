@@ -27,8 +27,25 @@ function _validateEmail(email, res) {
   return true;
 }
 
-// Helper: Validate password
-function _validatePassword(password, res) {
+// Helper: Strong password validation (registration only)
+function _validateStrongPassword(password, res) {
+  if (!password) {
+    res.status(400).json({ error: 'Password is required' });
+    return false;
+  }
+  // Password must be at least 8 characters and include uppercase, lowercase, number, and symbol
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+  if (!passwordRegex.test(password)) {
+    res.status(400).json({
+      error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and symbol.'
+    });
+    return false;
+  }
+  return true;
+}
+
+// Helper: Basic password validation (login/invite, for backward compatibility)
+function _validateBasicPassword(password, res) {
   if (!password) {
     res.status(400).json({ error: 'Password is required' });
     return false;
@@ -44,7 +61,7 @@ export const validateRegistration = (req, res, next) => {
   const { name, email, password } = req.body;
   if (!_validateName(name, res)) return;
   if (!_validateEmail(email, res)) return;
-  if (!_validatePassword(password, res)) return;
+  if (!_validateStrongPassword(password, res)) return;
   next();
 };
 
@@ -52,7 +69,7 @@ export const validateRegistration = (req, res, next) => {
 export const validateLogin = (req, res, next) => {
   const { email, password } = req.body;
   if (!_validateEmail(email, res)) return;
-  if (!_validatePassword(password, res)) return;
+  if (!_validateBasicPassword(password, res)) return;
   next();
 };
 
@@ -61,7 +78,7 @@ export const validateInvite = (req, res, next) => {
   const { name, email, password } = req.body;
   if (!_validateName(name, res)) return;
   if (!_validateEmail(email, res)) return;
-  if (!_validatePassword(password, res)) return;
+  if (!_validateBasicPassword(password, res)) return;
   next();
 };
 
