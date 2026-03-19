@@ -194,7 +194,7 @@ class AuthController {
    * Logout user - clear JWT cookie
    */
   async logout(req, res) {
-    res.clearCookie('token');
+    res.clearCookie('token', AuthController._getCookieOptions());
     res.json({ message: 'Logout successful' });
   }
 
