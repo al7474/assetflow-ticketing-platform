@@ -6,6 +6,7 @@
 import express from 'express';
 import ticketController from '../controllers/ticket.controller.js';
 import { validateCreateTicket, validateTicketId } from '../validators/ticket.validator.js';
+import { validateAssetOwnership } from '../middleware/ticketValidation.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { attachOrganization, requireOrganization } from '../middleware/organization.js';
 import { checkSubscriptionLimits } from '../middleware/subscription.js';
@@ -20,6 +21,7 @@ router.post(
   requireOrganization,
   checkSubscriptionLimits('ticket'),
   validateCreateTicket,
+  validateAssetOwnership,
   ticketController.createTicket
 );
 

@@ -46,7 +46,7 @@ const TicketList = () => {
     setShowModal(true);
     setDescription('');
     setSelectedAssetId('');
-    setError('');
+    setFormError('');
     fetchAssets();
   };
 
@@ -54,7 +54,7 @@ const TicketList = () => {
     setShowModal(false);
     setDescription('');
     setSelectedAssetId('');
-    setError('');
+    setFormError('');
   };
 
   const handleSubmit = async (e) => {

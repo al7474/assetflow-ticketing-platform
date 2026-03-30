@@ -8,6 +8,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class TicketService {
+    /**
+     * Create a ticket and send notification (business logic centralized)
+     */
+    async createTicketWithNotification({ description, asset, userId, organizationId }) {
+      // Build the ticket title here to keep logic out of the controller
+      const ticket = await this.createTicket({
+        title: `Issue with ${asset.name}`,
+        description: description.trim(),
+        userId,
+        assetId: asset.id,
+        organizationId
+      });
+      // Notify organization admins
+      const { sendTicketNotification } = await import('../utils/email.js');
+      await sendTicketNotification(organizationId, ticket, asset, ticket.user);
+      return ticket;
+    }
   /**
    * Check if asset has open ticket
    */

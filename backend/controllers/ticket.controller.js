@@ -14,43 +14,17 @@ class TicketController {
    */
   async createTicket(req, res) {
     try {
-      const { description, assetId } = req.body;
+      const { description } = req.body;
+      // Asset is already validated and attached to req.asset by middleware
+      // Open ticket validation is already done by middleware
 
-      // Check if asset already has open ticket
-      const hasOpenTicket = await ticketService.hasOpenTicket(
-        assetId,
-        req.organizationId
-      );
-
-      if (hasOpenTicket) {
-        return res.status(400).json({ 
-          error: 'This asset already has an active failure report.' 
-        });
-      }
-
-      // Get asset info and verify ownership
-      const asset = await assetService.getAssetById(assetId, req.organizationId);
-      if (!asset) {
-        return res.status(404).json({ error: 'Asset not found or access denied' });
-      }
-
-      // Create ticket
-      const newTicket = await ticketService.createTicket({
-        title: `Issue with ${asset.name}`,
-        description: description.trim(),
+      // Delegate business logic to the service
+      const newTicket = await ticketService.createTicketWithNotification({
+        description,
+        asset: req.asset,
         userId: req.user.id,
-        assetId,
         organizationId: req.organizationId
       });
-
-      // Send email notification
-      await sendTicketNotification(
-        req.organizationId,
-        newTicket,
-        newTicket.asset,
-        newTicket.user
-      );
-
       res.json(newTicket);
     } catch (error) {
       console.error('Create ticket error:', error);
