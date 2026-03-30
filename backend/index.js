@@ -69,8 +69,20 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  // Structured logging
+  console.error('[ERROR]', {
+    message: err.message,
+    stack: err.stack,
+    route: req.originalUrl,
+    method: req.method,
+    user: req.user?.id || null
+  });
+  // In production, never leak stack traces
+  const isDev = process.env.NODE_ENV !== 'production';
+  res.status(500).json({
+    error: 'Internal server error',
+    ...(isDev && { details: err.message })
+  });
 });
 
 

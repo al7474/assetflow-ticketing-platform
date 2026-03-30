@@ -53,11 +53,13 @@ model Asset {
 }
 
 model Ticket {
+    extraData      Json?         // Additional data for flexible ticket types
   id             Int          @id @default(autoincrement())
   title          String
   description    String
   status         String       @default("OPEN") // OPEN, CLOSED
   priority       String       @default("MEDIUM") // LOW, MEDIUM, HIGH
+  type           String       @default("general") // Ticket type (e.g. maintenance, incident, feature-request)
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())

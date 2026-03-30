@@ -7,48 +7,54 @@
 import ticketService from '../services/ticket.service.js';
 import assetService from '../services/asset.service.js';
 import { sendTicketNotification } from '../utils/email.js';
+import '../validators/ticketTypes.js'; // Register ticket types/validations
+import { getTicketValidation } from '../validators/ticketValidationStrategies.js';
 
 class TicketController {
   /**
    * Create new ticket
    */
-  async createTicket(req, res) {
+  async createTicket(req, res, next) {
     try {
-      const { description } = req.body;
+      const { description, type, extraData, ...rest } = req.body;
       // Asset is already validated and attached to req.asset by middleware
       // Open ticket validation is already done by middleware
+
+      // Run type-specific validation strategy
+      await getTicketValidation(type)({ description, type, extraData, ...rest });
 
       // Delegate business logic to the service
       const newTicket = await ticketService.createTicketWithNotification({
         description,
+        type,
+        extraData,
         asset: req.asset,
         userId: req.user.id,
-        organizationId: req.organizationId
+        organizationId: req.organizationId,
+        ...rest
       });
       res.json(newTicket);
     } catch (error) {
-      console.error('Create ticket error:', error);
-      res.status(500).json({ error: 'Failed to create ticket' });
+      next(error);
     }
   }
 
   /**
    * Get all tickets (Admin only)
    */
-  async getTickets(req, res) {
+  async getTickets(req, res, next) {
     try {
       const tickets = await ticketService.getTicketsByOrganization(req.organizationId);
       res.json(tickets);
     } catch (error) {
-      console.error('Fetch tickets error:', error);
-      res.status(500).json({ error: 'Failed to fetch tickets' });
+      next(error);
     }
   }
 
   /**
    * Delete ticket (Admin only)
    */
-  async deleteTicket(req, res) {
+  async deleteTicket(req, res, next) {
     try {
       const { ticketId } = req.params;
       // Verify ticket belongs to organization
@@ -59,15 +65,14 @@ class TicketController {
       await ticketService.deleteTicket(ticketId);
       res.json({ success: true });
     } catch (error) {
-      console.error('Delete ticket error:', error);
-      res.status(500).json({ error: 'Failed to delete ticket' });
+      next(error);
     }
   }
 
   /**
    * Close ticket (Admin only)
    */
-  async closeTicket(req, res) {
+  async closeTicket(req, res, next) {
     try {
       const { ticketId } = req.params;
 
@@ -86,8 +91,7 @@ class TicketController {
 
       res.json(updatedTicket);
     } catch (error) {
-      console.error('Close ticket error:', error);
-      res.status(500).json({ error: 'Failed to close ticket' });
+      next(error);
     }
   }
 }

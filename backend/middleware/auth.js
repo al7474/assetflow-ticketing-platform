@@ -1,25 +1,13 @@
-import jwt from 'jsonwebtoken';
-
-
-export const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+import { extractToken, verifyToken, isAdmin } from './authHelpers.js';
 
 // Middleware to verify JWT token
 export const authenticateToken = (req, res, next) => {
-  // Try to get token from Authorization header or cookie
-  let token = null;
-  const authHeader = req.headers['authorization'];
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  }
-
+  const token = extractToken(req);
   if (!token) {
     return res.status(401).json({ error: 'Access denied. No token provided.' });
   }
-
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifyToken(token);
     req.user = decoded; // { id, email, role }
     next();
   } catch (error) {
@@ -29,7 +17,7 @@ export const authenticateToken = (req, res, next) => {
 
 // Middleware to check if user has admin role
 export const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'ADMIN') {
+  if (!isAdmin(req.user)) {
     return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
   }
   next();

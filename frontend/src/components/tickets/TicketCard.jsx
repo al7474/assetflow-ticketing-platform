@@ -19,7 +19,8 @@ export function TicketCard({ ticket, onClose, onDelete }) {
       </div>
       <div className="text-gray-700 dark:text-gray-100 space-y-2">
         <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Equipment:</strong> {ticket.asset.name} ({ticket.asset.serialNumber})</p>
-        <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Type:</strong> {ticket.asset.type}</p>
+        <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Ticket Type:</strong> {ticket.type}</p>
+        <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Asset Type:</strong> {ticket.asset.type}</p>
         <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Reported by:</strong> {ticket.user.name} ({ticket.user.email})</p>
         <p className="text-gray-800 dark:text-gray-100"><strong className="text-gray-900 dark:text-white">Description:</strong></p>
         <p className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg italic text-gray-600 dark:text-gray-200 mt-2">{ticket.description}</p>

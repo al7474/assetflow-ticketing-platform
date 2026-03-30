@@ -1,17 +1,37 @@
+
 import React, { useState, useEffect } from 'react';
-import { useTickets } from '../../hooks/useTickets';
+import { useTicketList } from '../../hooks/useTicketList';
+import { useCreateTicket } from '../../hooks/useCreateTicket';
+import { useCloseTicket } from '../../hooks/useCloseTicket';
+import { useDeleteTicket } from '../../hooks/useDeleteTicket';
 import CreateTicketModal from './CreateTicketModal';
 import { TicketCard } from './TicketCard';
 
+// Helper to confirm and execute an action with success/error alerts
+async function confirmAndExecute({ message, action, successMsg, errorMsg }) {
+  if (!window.confirm(message)) return;
+  const result = await action();
+  if (result.success) {
+    alert(successMsg);
+  } else {
+    alert(result.message || errorMsg);
+  }
+}
+
 
 const TicketList = () => {
-  const { tickets, loading, error, createTicket, closeTicket, deleteTicket } = useTickets();
+  const { tickets, loading, error, fetchTickets } = useTicketList();
+  const createTicket = useCreateTicket(fetchTickets);
+  const closeTicket = useCloseTicket(fetchTickets);
+  const deleteTicket = useDeleteTicket(fetchTickets);
   const [showModal, setShowModal] = useState(false);
   const [assets, setAssets] = useState([]);
   const [selectedAssetId, setSelectedAssetId] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [type, setType] = useState('general');
+  const [extraData, setExtraData] = useState({});
 
   const fetchAssets = async () => {
     try {
@@ -22,31 +42,29 @@ const TicketList = () => {
     }
   };
 
-  const handleCloseTicket = async (ticketId) => {
-    if (!window.confirm('Are you sure you want to close this ticket?')) return;
-    const result = await closeTicket(ticketId);
-    if (result.success) {
-      alert('Ticket closed successfully!');
-    } else {
-      alert(result.message || 'Failed to close ticket.');
-    }
-  };
+  const handleCloseTicket = (ticketId) =>
+    confirmAndExecute({
+      message: 'Are you sure you want to close this ticket?',
+      action: () => closeTicket(ticketId),
+      successMsg: 'Ticket closed successfully!',
+      errorMsg: 'Failed to close ticket.',
+    });
 
-  const handleDeleteTicket = async (ticketId) => {
-    if (!window.confirm('Are you sure you want to delete this ticket?')) return;
-    const result = await deleteTicket(ticketId);
-    if (result.success) {
-      alert('Ticket deleted successfully!');
-    } else {
-      alert(result.message || 'Failed to delete ticket.');
-    }
-  };
+  const handleDeleteTicket = (ticketId) =>
+    confirmAndExecute({
+      message: 'Are you sure you want to delete this ticket?',
+      action: () => deleteTicket(ticketId),
+      successMsg: 'Ticket deleted successfully!',
+      errorMsg: 'Failed to delete ticket.',
+    });
 
   const handleOpenModal = () => {
     setShowModal(true);
     setDescription('');
     setSelectedAssetId('');
+    setType('general');
     setFormError('');
+    setExtraData({});
     fetchAssets();
   };
 
@@ -54,18 +72,20 @@ const TicketList = () => {
     setShowModal(false);
     setDescription('');
     setSelectedAssetId('');
+    setType('general');
     setFormError('');
+    setExtraData({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedAssetId || !description.trim()) {
-      setFormError('Please select an asset and enter a description.');
+    if (!selectedAssetId || !description.trim() || !type) {
+      setFormError('Please select an asset, type, and enter a description.');
       return;
     }
     setSubmitting(true);
     setFormError('');
-    const result = await createTicket({ assetId: selectedAssetId, description: description.trim() });
+    const result = await createTicket({ assetId: selectedAssetId, description: description.trim(), type, extraData });
     if (result.success) {
       handleCloseModal();
     } else {
@@ -94,9 +114,13 @@ const TicketList = () => {
         setSelectedAssetId={setSelectedAssetId}
         description={description}
         setDescription={setDescription}
+        type={type}
+        setType={setType}
         submitting={submitting}
         error={formError}
         onSubmit={handleSubmit}
+        extraData={extraData}
+        setExtraData={setExtraData}
       />
 
       <div className="space-y-6">

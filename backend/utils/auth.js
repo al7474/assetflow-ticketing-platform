@@ -1,7 +1,7 @@
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../middleware/auth.js';
+import { JWT_SECRET } from '../middleware/authHelpers.js';
 
 const SALT_ROUNDS = 10;
 

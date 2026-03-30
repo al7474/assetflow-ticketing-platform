@@ -1,3 +1,20 @@
+// Utility functions for field selection (private to this module)
+function userSelectFields() {
+  return {
+    id: true,
+    name: true,
+    email: true
+  };
+}
+
+function assetSelectFields() {
+  return {
+    id: true,
+    name: true,
+    serialNumber: true,
+    type: true
+  };
+}
 /**
  * Ticket service
  * Database operations for ticket-related functionality
@@ -11,11 +28,13 @@ class TicketService {
     /**
      * Create a ticket and send notification (business logic centralized)
      */
-    async createTicketWithNotification({ description, asset, userId, organizationId }) {
-      // Build the ticket title here to keep logic out of the controller
+    // Handles business logic: create ticket and send notification
+    async createTicketWithNotification({ description, type, extraData, asset, userId, organizationId }) {
       const ticket = await this.createTicket({
         title: `Issue with ${asset.name}`,
         description: description.trim(),
+        type,
+        extraData: extraData || null,
         userId,
         assetId: asset.id,
         organizationId
@@ -28,7 +47,7 @@ class TicketService {
   /**
    * Check if asset has open ticket
    */
-  async hasOpenTicket(assetId, organizationId) {
+  async hasOpenTicketForAsset(assetId, organizationId) {
     const ticket = await prisma.ticket.findFirst({
       where: {
         assetId,
@@ -42,12 +61,13 @@ class TicketService {
   /**
    * Create new ticket
    */
+  // Data access only: create ticket and return with user and asset
   async createTicket(ticketData) {
     return await prisma.ticket.create({
       data: ticketData,
       include: {
-        user: true,
-        asset: true
+        user: { select: userSelectFields() },
+        asset: { select: assetSelectFields() }
       }
     });
   }
@@ -55,25 +75,13 @@ class TicketService {
   /**
    * Get all tickets for organization
    */
+  // Data access only: get all tickets for organization
   async getTicketsByOrganization(organizationId) {
     return await prisma.ticket.findMany({
       where: { organizationId },
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        asset: {
-          select: {
-            id: true,
-            name: true,
-            serialNumber: true,
-            type: true
-          }
-        }
+        user: { select: userSelectFields() },
+        asset: { select: assetSelectFields() }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -94,13 +102,14 @@ class TicketService {
   /**
    * Update ticket status
    */
+  // Data access only: update ticket status and return with user and asset
   async updateTicketStatus(id, status) {
     return await prisma.ticket.update({
       where: { id },
       data: { status },
       include: {
-        user: true,
-        asset: true
+        user: { select: userSelectFields() },
+        asset: { select: assetSelectFields() }
       }
     });
   }
